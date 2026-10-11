@@ -246,7 +246,7 @@ defmodule Jantar.Sensor do
   # make the interval drift. After a stall (e.g. suspend) we don't burst to
   # catch up: the next tick is one interval from now.
   defp schedule_tick(state, now) do
-    interval = round(state.interval * Mode.interval_factor())
+    interval = round(Mode.interval(state.interval))
     due = (state.due || now) + interval
     due = if due <= now, do: now + interval, else: due
     Process.send_after(self(), :tick, due, abs: true)

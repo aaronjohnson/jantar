@@ -31,6 +31,21 @@ defmodule Jantar.ModeTest do
     assert Mode.interval_factor() == 1
   end
 
+  test "while hidden nothing samples faster than hidden_min_interval" do
+    assert Mode.interval(250) == 250
+
+    Mode.set(:visible, false)
+    assert Mode.interval(250) == 1000
+    assert Mode.interval(20_000) == 20_000
+
+    Application.put_env(:jantar, :hidden_on_battery_factor, 2)
+    Mode.set(:on_battery, true)
+    assert Mode.interval(250) == 2000
+
+    Mode.set(:visible, true)
+    assert Mode.interval(250) == 250
+  end
+
   test "rejects unknown flags" do
     assert_raise FunctionClauseError, fn -> Mode.set(:loud, true) end
   end

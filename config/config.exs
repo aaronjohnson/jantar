@@ -11,9 +11,10 @@ config :jantar, max_points: 7200
 # Adaptive sampling for every sensor (each can also set `adaptive: true`).
 config :jantar, adaptive: false
 
-# When the display is hidden and the machine is on battery, multiply sensor
-# intervals by this. 1 = no change (the mechanism exists; the display that
-# reports visibility comes in a later milestone).
+# While the dashboard is hidden, no sensor samples more often than this (ms),
+# so the 250 ms sensors wake a quarter as often. Hidden and on battery,
+# intervals are also multiplied by hidden_on_battery_factor (1 = no change).
+config :jantar, hidden_min_interval: 1000
 config :jantar, hidden_on_battery_factor: 1
 
 # The dashboard (see Jantar.Display for every option). `start: true` runs it
