@@ -30,7 +30,12 @@ defmodule Jantar.Frame.Demo do
         end),
       :wifi => series(1_800_000, 20_000, fn _t -> 58 + noise(5) end),
       {:gpu, "gt0-rc"} => series(300_000, 250, fn t -> busy(t, 0.02, 0.3) end),
-      {:gpu, "gt1-mc"} => series(300_000, 250, fn t -> busy(t, 0.002, 0.02) end)
+      {:gpu, "gt1-mc"} => series(300_000, 250, fn t -> busy(t, 0.002, 0.02) end),
+      # The link went down for a minute 19 minutes ago, after a roam.
+      {:link, :gateway} =>
+        series(1_800_000, 2000, fn t -> if t in 660_000..720_000, do: 0, else: 1 end),
+      {:event, :wifi} => events([{1_320_000, 1}, {1_140_000, -1}, {1_110_000, 1}]),
+      {:event, :link} => events([{1_135_000, -2}, {1_085_000, 2}])
     }
 
     kinds = List.duplicate("P", 4) ++ List.duplicate("E", 8) ++ List.duplicate("LP", 4)
@@ -76,6 +81,8 @@ defmodule Jantar.Frame.Demo do
         bitrate_mbit: 1152.9,
         links: [%{id: 1, freq_mhz: 5180, active: false}, %{id: 2, freq_mhz: 6375, active: true}]
       },
+      link: %{route: true, gateway: true, iface: "wlan0", gateway_ip: "192.168.1.1"},
+      wifi_events: %{iface: "wlan0", bssid: "02:00:00:00:00:04"},
       ci_runner: %{
         installed: true,
         active: true,
@@ -89,6 +96,14 @@ defmodule Jantar.Frame.Demo do
     }
 
     %{now: @now, series: series, sensors: sensors}
+  end
+
+  # Events `{age_ms, code}` in a 30 min window.
+  defp events(list) do
+    %{
+      samples: for({age, code} <- Enum.reverse(list), do: {@now - age, code}),
+      window_ms: 1_800_000
+    }
   end
 
   # A series sampled every `every` ms over `window` ms ending now, as History holds it.

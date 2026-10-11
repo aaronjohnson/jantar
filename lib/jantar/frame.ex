@@ -30,7 +30,11 @@ defmodule Jantar.Frame do
 
   # ------------------------------------------------------------------ snapshot
 
-  @series [:cpu, :clock, :mem, :rx, :tx, :temp, :power, :fan, :npu, :wifi]
+  @series [:cpu, :clock, :mem, :rx, :tx, :temp, :power, :fan, :npu, :wifi] ++
+            [{:link, :gateway}, {:event, :wifi}, {:event, :link}]
+
+  # Cutovers drawn as radial lines on the network dials.
+  @network_events [{:event, :wifi}, {:event, :link}]
   @sensors [
     :cpu,
     :memory,
@@ -42,6 +46,8 @@ defmodule Jantar.Frame do
     :npu,
     :gpu,
     :wifi,
+    :link,
+    :wifi_events,
     :ci_runner
   ]
 
@@ -76,6 +82,8 @@ defmodule Jantar.Frame do
 
   defp series_at(name, info, :live, _now),
     do: %{samples: History.samples(name), window_ms: info.window_ms}
+
+  defp series_at({:event, _} = name, info, _scale, now), do: series_at(name, info, :live, now)
 
   defp series_at(name, _info, scale, now) do
     {:spec, step, keep} = History.scales()[scale]
@@ -114,7 +122,7 @@ defmodule Jantar.Frame do
     foot_h = if ci && ci.installed, do: trunc(44 * u), else: 0
 
     panels = panels(snap)
-    {tiles, d} = grid(length(panels), w, h, margin, head_h, foot_h, u)
+    {placed, titles} = sections(panels, w, h, margin, head_h, foot_h, u)
 
     ops = [
       DL.fill(c.bg),
@@ -123,41 +131,127 @@ defmodule Jantar.Frame do
         do: footer(ctx, ci, margin, h - foot_h - div(margin, 2), w - 2 * margin),
         else: []
       ),
-      Enum.zip_with(panels, tiles, fn panel, {cx, y0} -> tile(ctx, panel, cx, y0, d) end)
+      for({x, y, text, tint, tw} <- titles, do: section_title(ctx, x, y, text, tint, tw)),
+      for({panel, cx, y0, d} <- placed, do: tile(ctx, panel, cx, y0, d))
     ]
 
-    meta = %{sensors: panels |> Enum.map(& &1.sensor) |> Enum.uniq(), dial_size: d}
+    meta = %{
+      sensors: panels |> Enum.map(& &1.sensor) |> Enum.uniq(),
+      dial_size: placed |> Enum.map(&elem(&1, 3)) |> Enum.max(fn -> 0 end)
+    }
+
     {DL.encode(w, h, ops), meta}
   end
 
-  # The biggest dial size whose grid of tiles fits (hud's FbRenderer.render):
-  # returns each tile's centre x and top y, and the dial diameter.
-  defp grid(count, w, h, margin, head_h, foot_h, u) do
-    {ax, ay} = {margin, head_h + div(margin, 2)}
-    {aw, ah} = {w - 2 * margin, h - ay - foot_h - margin}
-    text_h = trunc(46 * u)
+  # ------------------------------------------------------------------ sections
+
+  # The panels grouped as in the Quickshell dropdown: titled sections in two
+  # columns, the dials of a section side by side.
+  @columns [
+    [
+      {"CPU", :yellow, ["CPU", "LOAD"]},
+      {"GPU · NPU", :orange, ["GPU", "NPU"]},
+      {"MEMORY", :violet, ["MEM"]}
+    ],
+    [
+      {"THERMALS", :red, ["TEMP", "CLOCK", "FAN"]},
+      {"POWER", :green, ["POWER"]},
+      {"NETWORK", :blue, ["WIFI", "NET", "LINK"]}
+    ]
+  ]
+
+  # Lay the sections out: returns `{panel, centre x, top y, dial size}` for
+  # each panel and `{x, y, text, tint, width}` for each section title. A section's
+  # dials share its column's width; one cap on dial size, the largest that
+  # lets both columns fit the height, keeps single dials from growing huge.
+  defp sections(panels, w, h, margin, head_h, foot_h, u) do
+    by_title = Map.new(panels, &{panel_title(&1), &1})
     gap = trunc(18 * u)
+    {title_h, text_h} = {trunc(24 * u), trunc(46 * u)}
+    top = head_h + div(margin, 2)
+    avail = h - top - foot_h - margin
+    col_w = (w - 2 * margin - gap) / 2
 
-    {d, cols, rows} =
-      Enum.reduce(1..max(count, 1), nil, fn cols, best ->
-        rows = div(count + cols - 1, cols)
-        d = min(aw / cols - gap, ah / max(rows, 1) - text_h - gap)
-        if best == nil or d > elem(best, 0), do: {d, cols, rows}, else: best
-      end)
-
-    d = trunc(d)
-    {tw, th} = {aw / cols, ah / max(rows, 1)}
-
-    tiles =
-      for i <- 0..(count - 1)//1 do
-        {col, row} = {rem(i, cols), div(i, cols)}
-        in_row = min(cols, count - row * cols)
-        x0 = ax + (aw - in_row * tw) / 2 + col * tw
-        y0 = ay + row * th + (th - d - text_h) / 2
-        {trunc(x0 + tw / 2), trunc(y0)}
+    columns =
+      for column <- @columns do
+        for {text, tint, titles} <- column,
+            members = for(t <- titles, p = by_title[t], do: p),
+            members != [],
+            do: {text, tint, members}
       end
 
-    {tiles, d}
+    # Anything not in a section (a new sensor) goes at the end of the shorter
+    # column, so it still shows.
+    known = @columns |> Enum.flat_map(fn col -> Enum.flat_map(col, &elem(&1, 2)) end)
+    extra = Enum.reject(panels, &(panel_title(&1) in known))
+    [left, right] = columns
+
+    columns =
+      if extra == [],
+        do: columns,
+        else: [left, right ++ [{"MORE", :fg, extra}]]
+
+    size = fn sec, cap -> min(col_w / length(elem(sec, 2)) - gap, cap) end
+
+    height = fn col, cap ->
+      col |> Enum.map(&(title_h + size.(&1, cap) + text_h + gap)) |> Enum.sum()
+    end
+
+    # The largest cap (in whole pixels) with both columns fitting.
+    cap =
+      Enum.find(trunc(col_w)..trunc(40 * u)//-4, trunc(40 * u), fn cap ->
+        Enum.all?(columns, &(height.(&1, cap) <= avail))
+      end)
+
+    {placed, titles} =
+      columns
+      |> Enum.with_index()
+      |> Enum.reduce({[], []}, fn {col, i}, acc ->
+        x0 = margin + i * (col_w + gap)
+        # Spread spare height evenly between the sections.
+        spare = max(0, avail - height.(col, cap)) / max(1, length(col))
+
+        {acc, _y} =
+          Enum.reduce(col, {acc, top}, fn {text, tint, members} = sec, {{placed, titles}, y} ->
+            d = trunc(size.(sec, cap))
+            share = col_w / length(members)
+
+            here =
+              members
+              |> Enum.with_index()
+              |> Enum.map(fn {p, k} -> {p, trunc(x0 + share * (k + 0.5)), y + title_h, d} end)
+
+            {{placed ++ here, titles ++ [{trunc(x0), y, text, tint, col_w}]},
+             y + title_h + d + text_h + gap + spare}
+          end)
+
+        acc
+      end)
+
+    {placed, titles}
+  end
+
+  defp panel_title(%{kind: :cpu}), do: "CPU"
+  defp panel_title(%{title: title}), do: title
+
+  # A section heading, like the dropdown's StatTitle: small, bold, tinted,
+  # with a hairline after it.
+  defp section_title(%{c: c, u: u}, x, y, text, tint, width) do
+    size = 13 * u
+    # DejaVu Sans Mono: each character is about 0.6 of the size wide.
+    after_text = x + (String.length(text) + 1) * size * 0.62
+
+    [
+      DL.text(x, y, :left, :top, [{text, size, true, Map.fetch!(c, tint)}]),
+      DL.line(
+        after_text,
+        y + size * 0.6,
+        x + width,
+        y + size * 0.6,
+        max(1.0, u),
+        DL.mix(c.dim, c.bg, 0.4)
+      )
+    ]
   end
 
   # ------------------------------------------------------------------ panels (hud's panels())
@@ -189,6 +283,7 @@ defmodule Jantar.Frame do
       s.net &&
         dial(:net, "NET", :blue, [{:rx, 1, :blue, :orange}, {:tx, -1, :blue, :orange}], hist,
           scale: {:log, 2.0, 8.0},
+          events: @network_events,
           mirrored: true,
           guides: [1.0e3, 1.0e6],
           centre: [
@@ -254,6 +349,7 @@ defmodule Jantar.Frame do
           ]
         ),
       s.wifi && s.wifi.ok != false && wifi_panel(s.wifi, hist),
+      s[:link] && link_panel(s[:link], s[:wifi_events], hist),
       s.cpu &&
         dial(:cpu, "LOAD", :yellow, [{:cpu, 1, :yellow, :yellow}], hist,
           guides: [0.5, 0.75],
@@ -342,6 +438,7 @@ defmodule Jantar.Frame do
 
     dial(:wifi, "WIFI", :cyan, [{:wifi, 1, :cyan, :cyan}], hist,
       scale: {:linear, 0.0, 100.0},
+      events: @network_events,
       guides: [50, 75],
       centre: [
         {if(on, do: "#{w.signal}%", else: if(w.ok, do: "off", else: "…")), :cyan, true},
@@ -353,6 +450,28 @@ defmodule Jantar.Frame do
            do: String.trim("#{links} #{w.width_mhz}MHz #{trunc(w.bitrate_mbit)}Mb"),
            else: ""
          ), :muted}
+      ]
+    )
+  end
+
+  # Is the link usable: a default route, and a gateway that answers ARP.
+  # Dots at 1 while up and on the inner ring while not; cutovers as lines.
+  defp link_panel(l, events, hist) do
+    {state, tint} =
+      cond do
+        not l.route -> {"no route", :red}
+        not l.gateway -> {"no gateway", :orange}
+        true -> {"up", :green}
+      end
+
+    dial(:link, "LINK", :green, [{{:link, :gateway}, 1, :green, :green}], hist,
+      scale: {:linear, 0.0, 1.0},
+      events: @network_events,
+      centre: [{state, tint, true}],
+      info: [
+        {if(l.route, do: "via #{l.gateway_ip} on #{l.iface}", else: "no default route"), :fg},
+        {if(events, do: "access point #{events.bssid}", else: "lines: green up, red down"),
+         :muted}
       ]
     )
   end
@@ -392,6 +511,7 @@ defmodule Jantar.Frame do
              floor_idle_rows(hist.(name)[:rows], opts)}
         ),
       polar: :jantar_core@polar.dial(scale, opts[:mirrored] || false, window, period),
+      events: for(name <- opts[:events] || [], e <- hist.(name).samples, do: e),
       guides: opts[:guides] || [],
       centre: opts[:centre] || [],
       info: opts[:info] || []
@@ -577,6 +697,7 @@ defmodule Jantar.Frame do
       ),
       DL.rects(List.flatten(guides)),
       DL.line(cx, cy - r0, cx, cy - r + u, line_w, DL.mix(c.dim, c.bg, 0.5)),
+      cutovers(ctx, p[:events] || [], cx, cy, r0, r1, window, period),
       samples,
       glow(ctx, glows)
     ]
@@ -716,6 +837,25 @@ defmodule Jantar.Frame do
         run -> {:cont, Enum.reverse(run), []}
       end
     )
+  end
+
+  # Network events as radial lines across the dial at the moment they
+  # happened: green for coming up (Wi-Fi connected or roamed, route or
+  # gateway back), red for going down. They fade with age like samples.
+  defp cutovers(%{c: c, u: u, now: now}, events, cx, cy, r0, r1, window, period) do
+    for {t, code} <- events, is_number(code), now - t >= 0, now - t < window do
+      a = :jantar_core@polar.angle(now - t, period)
+      col = if code > 0, do: c.green, else: c.red
+
+      DL.line(
+        cx + r0 * :math.cos(a),
+        cy + r0 * :math.sin(a),
+        cx + r1 * :math.cos(a),
+        cy + r1 * :math.sin(a),
+        max(1.0, 1.5 * u),
+        DL.mix(col, c.bg, fade(now - t, window) * 0.8)
+      )
+    end
   end
 
   # hud's fading: opacity 1 for new samples down to 0.2 at the end of the window.
