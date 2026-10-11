@@ -62,6 +62,10 @@ defmodule Jantar.NpuCountersTest do
      }}
   end
 
+  # One FRC report: NCE cycles counted, at a timestamp in ticks.
+  defp frc(cycles, ticks),
+    do: {"FRC", 3, %{"FRC_Fixed" => ticks, "FRC_Dynamic" => cycles, "FRC_timestamp" => ticks}}
+
   defp freq(dpu_khz, nce_khz),
     do: {"FREQ", 2, %{"Freq_dpu_hz" => dpu_khz, "Freq_nce_hz" => nce_khz, "Freq_timestamp" => 1}}
 
@@ -79,11 +83,8 @@ defmodule Jantar.NpuCountersTest do
     npu(dir, 1000, "suspended")
     {:ok, s, series} = init(dir)
 
-    assert series == [
-             {{:npu, :dma}, 300_000},
-             {{:npu, :riscv}, 300_000},
-             {{:npu, :shave}, 300_000}
-           ]
+    assert for({name, 300_000} <- series, do: name) ==
+             [{:npu, :compute}, {:npu, :dma}, {:npu, :riscv}, {:npu, :shave}]
 
     # Asleep, busy time still: nothing touches the NPU.
     {:ok, [], c, s} = NpuCounters.sample(s, 0)
@@ -107,8 +108,14 @@ defmodule Jantar.NpuCountersTest do
     # First read is the baseline, the second gives rates per second of NPU
     # time (19.2 MHz ticks: 1 s here).
     Process.put(:reads, [
-      {:ok, [noc(1.0e9, 1.0e6, 100.0, 1_000_000), freq(950_000, 542_857)]},
-      {:ok, [noc(4.0e9, 2.9e7, 7400.0, 20_200_000), {"FREQ", 0, %{}}]}
+      {:ok, [noc(1.0e9, 1.0e6, 100.0, 1_000_000), frc(0, 1_000_000), freq(950_000, 542_857)]},
+      # 1 s at 543 MHz, the clock on for 25% of it.
+      {:ok,
+       [
+         noc(4.0e9, 2.9e7, 7400.0, 20_200_000),
+         frc(0.25 * 543.0e6, 20_200_000),
+         {"FREQ", 0, %{}}
+       ]}
     ])
 
     npu(dir, 9000, "active")
@@ -119,13 +126,14 @@ defmodule Jantar.NpuCountersTest do
     assert_in_delta readings[{:npu, :dma}], 3.0e9, 1
     assert_in_delta readings[{:npu, :riscv}], 2.8e7, 1.0e-3
     assert_in_delta readings[{:npu, :shave}], 7300.0, 1.0e-6
+    assert_in_delta readings[{:npu, :compute}], 0.25, 1.0e-9
     assert_in_delta c.dma0, 1.5e9, 1
     # The clocks come in kHz; kept when a read has no FREQ report.
     assert {c.dpu_mhz, c.nce_mhz} == {950, 543}
 
     # Work stops: close, and a gap in each series.
     {:ok, gaps, c, s} = NpuCounters.sample(s, 7000)
-    assert gaps == [{{:npu, :dma}, nil}, {{:npu, :riscv}, nil}, {{:npu, :shave}, nil}]
+    assert gaps == for(k <- [:compute, :dma, :riscv, :shave], do: {{:npu, k}, nil})
     refute c.streaming
     assert List.last(Process.get(:calls)) == :close
 
@@ -147,6 +155,29 @@ defmodule Jantar.NpuCountersTest do
     assert {:unavailable, {:npu_port, "no metric group NOC"}, s} = NpuCounters.sample(s, 1000)
     assert Process.get(:calls) == [:start, :open, :stop]
     assert s.port == nil
+  end
+
+  test "streamers held by another tool: wait and retry, not unavailable", %{tmp_dir: dir} do
+    npu(dir, 0, "active")
+    {:ok, s, _} = init(dir)
+    {:ok, _, _, s} = NpuCounters.sample(s, 0)
+    Process.put(:open_reply, {:error, "zetMetricStreamerOpen NOC: 0x7ffffffe"})
+
+    npu(dir, 10, "active")
+    assert {:ok, [], c, s} = NpuCounters.sample(s, 1000)
+    assert c.in_use_elsewhere and not c.streaming
+
+    # Still working, but no new attempt within 30 s.
+    npu(dir, 20, "active")
+    {:ok, [], _, s} = NpuCounters.sample(s, 2000)
+    assert Process.get(:calls) == [:start, :open]
+
+    # Free again later.
+    Process.put(:open_reply, {:ok, :layout})
+    npu(dir, 30, "active")
+    {:ok, [], c, _} = NpuCounters.sample(s, 31_001)
+    assert Process.get(:calls) == [:start, :open, :open]
+    assert c.streaming and not c.in_use_elsewhere
   end
 
   test "npu_port: protocol round trip, without opening the NPU" do

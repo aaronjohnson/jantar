@@ -43,7 +43,7 @@ defmodule Jantar.Frame do
             ] ++
             [{:swap, :in}, {:swap, :out}, {:disk, :read}, {:disk, :write}] ++
             for(d <- [:platform, :package, :cores, :graphics, :memory], do: {:rapl, d}) ++
-            for(k <- [:dma, :riscv, :shave], do: {:npu, k})
+            for(k <- [:compute, :dma, :riscv, :shave], do: {:npu, k})
 
   # Cutovers drawn as radial lines on the network dials.
   @network_events [{:event, :wifi}, {:event, :link}]
@@ -420,21 +420,7 @@ defmodule Jantar.Frame do
             {top_writer(s.disk.top), :muted}
           ]
         ),
-      s.npu &&
-        dial(:npu, "NPU", :green, [{:npu, 1, :green, :green}], hist,
-          scale: {:log, -3.0, 0.0},
-          idle_floor: true,
-          guides: [0.01, 0.1],
-          centre: [
-            {Format.pct(s.npu.load), :green, true},
-            {if(s.npu.awake, do: "awake", else: "asleep"), if(s.npu.awake, do: :fg, else: :muted),
-             false}
-          ],
-          info: [
-            {"#{s.npu.mhz} of #{s.npu.max_mhz} MHz", :fg},
-            {if(s.npu.mem_bytes, do: "mem " <> Format.bytes(s.npu.mem_bytes), else: ""), :muted}
-          ]
-        ),
+      s.npu && npu_panel(s.npu, s[:npu_counters], hist),
       s[:npu_counters] && dma_panel(s.npu_counters, hist),
       s.gpu && gpu_panel(s.gpu, hist),
       s.cpu && s.cpu.clock_ghz &&
@@ -548,6 +534,37 @@ defmodule Jantar.Frame do
     )
   end
 
+  # The NPU's jobs (the driver's busy time, green) and, while the counters
+  # run, how much of that time its compute engine actually ran (blue: the
+  # NCE clock's on-share; DPU and SHAVE together).
+  defp npu_panel(npu, counters, hist) do
+    compute = counters && counters.streaming && counters[:compute]
+
+    dial(
+      :npu,
+      "NPU",
+      :green,
+      [{:npu, 1, :green, :green}, {{:npu, :compute}, 1, :blue, :blue}],
+      hist,
+      scale: {:log, -3.0, 0.0},
+      idle_floor: true,
+      guides: [0.01, 0.1],
+      centre: [
+        {Format.pct(npu.load), :green, true},
+        cond do
+          compute -> {"compute " <> Format.pct(compute), :blue, false}
+          npu.awake -> {"awake", :fg, false}
+          true -> {"asleep", :muted, false}
+        end
+      ],
+      info: [
+        {"#{npu.mhz} of #{npu.max_mhz} MHz" <>
+           if(npu.mem_bytes, do: "  mem " <> Format.bytes(npu.mem_bytes), else: ""), :fg},
+        {if(counters, do: "green jobs, blue compute", else: ""), :muted}
+      ]
+    )
+  end
+
   # What the NPU moves while it works (Level Zero counters, read only while
   # it is awake and busy): all DMA outermost, then the RISC-V control cores'
   # and the SHAVE vector cores' cache traffic, on one log scale.
@@ -570,10 +587,11 @@ defmodule Jantar.Frame do
         {if(working, do: "riscv " <> Format.count(n.riscv), else: ""), :magenta, false}
       ],
       info: [
-        {if(n.streaming and n.nce_mhz,
-           do: "NCE #{n.nce_mhz}  DPU #{n.dpu_mhz} MHz",
-           else: "counted while working"
-         ), :fg},
+        {cond do
+           n.streaming and n.nce_mhz -> "NCE #{n.nce_mhz}  DPU #{n.dpu_mhz} MHz"
+           n[:in_use_elsewhere] -> "counters in use elsewhere"
+           true -> "counted while working"
+         end, :fg},
         {"green DMA, magenta RISC-V, cyan SHAVE", :muted}
       ]
     )

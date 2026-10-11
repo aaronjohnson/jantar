@@ -31,6 +31,7 @@ defmodule Jantar.Frame.Demo do
       :wifi => series(1_800_000, 20_000, fn _t -> 58 + noise(5) end),
       # An inference job for 40 s of every 120 s; the counters only run then.
       {:npu, :dma} => series(300_000, 1000, fn t -> npu_job(t, 3.0e9) end),
+      {:npu, :compute} => series(300_000, 1000, fn t -> npu_job(t, 0.04) end),
       {:npu, :riscv} => series(300_000, 1000, fn t -> npu_job(t, 1.9e7) end),
       {:npu, :shave} => series(300_000, 1000, fn t -> npu_job(t, 7.3e3) end),
       {:gpu, "gt0-rc"} => series(300_000, 250, fn t -> busy(t, 0.02, 0.3) end),
@@ -96,6 +97,7 @@ defmodule Jantar.Frame.Demo do
         dma1: 1.45e9,
         riscv: 1.9e7,
         shave: 7.3e3,
+        compute: 0.046,
         nce_mhz: 543,
         dpu_mhz: 950
       },

@@ -13,6 +13,23 @@ building it:
   rates are timed with it. NOC counters restart at 0 with each streamer.
 - `Freq_dpu_hz` / `Freq_nce_hz` are kHz (950000 while sysfs said 950 MHz).
 
+- SHAVE and the matrix engine (measured with a convolution-only model and a
+  softmax/MVN/exp/sin one, OpenVINO PERF_COUNT for the split):
+  - `L2C_Shave` is 0 under convolutions alone (DPU 544 µs per inference)
+    and ~1.8e4/s once SHAVE runs (1.1-1.8 ms of SHAVE per inference): it
+    says whether SHAVE is in use, not how much.
+  - `FRC_Fixed` counts the 19.2 MHz crystal; `FRC_Dynamic` counts NCE clock
+    cycles while that clock runs (1.17e9/s at 1171 MHz flat out). Their
+    ratio over the NCE clock is the engine's duty: ~100% flat out, 46% for
+    a job 45% of the time, 32% for 18% (the clock stays on a while), 6.5%
+    for 5%. Shown as "compute" on the NPU dial. Same for DPU and SHAVE
+    work, so it can't split them.
+  - Only one streamer per group can be open: a second one fails with
+    0x7ffffffe. jantar now waits 30 s and retries (logging once) instead
+    of going unavailable every 5 s.
+  - `L2C_Riscv` is the cache traffic of the NPU's own control core (the
+    firmware that schedules jobs): it follows job count, not size.
+
 Still to check on the real service: the NPU keeps suspending when idle with
 jantar running (watch `runtime_suspended_time` grow).
 
