@@ -34,18 +34,21 @@ defmodule BeamHud.Display.Ticker do
     Process.flag(:trap_exit, true)
 
     fb_path = Keyword.get(opts, :fb, "/dev/fb0")
-    geometry = geometry(fb_path, opts[:size])
-    :ok = Render.open_fb(@backend, fb_path, geometry.width, geometry.height, geometry.stride)
-
     tty = Keyword.get(opts, :tty, "/dev/tty12")
 
     state = %{
+      fb_path: fb_path,
+      size: opts[:size],
+      fb_open: false,
+      fb_error: nil,
+      fb_failures: 0,
       tty: tty,
       vt: Path.basename(tty),
       active_file: Keyword.get(opts, :active_file, "/sys/class/tty/tty0/active"),
       kd_mode: Keyword.get(opts, :kd_mode, String.starts_with?(fb_path, "/dev/")),
-      width: geometry.width,
-      height: geometry.height,
+      frame_error: nil,
+      width: nil,
+      height: nil,
       label: Keyword.get(opts, :label, Atom.to_string(Keyword.get(opts, :backend, :rust))),
       max_fps: Keyword.get(opts, :max_fps, 4),
       battery_max_fps: Keyword.get(opts, :battery_max_fps, 2),
@@ -59,11 +62,33 @@ defmodule BeamHud.Display.Ticker do
 
     # Hidden until the poll finds our VT in front.
     Mode.set(:visible, false)
-    send(self(), :poll)
+    send(self(), :open_fb)
     {:ok, state}
   end
 
+  # Map the framebuffer. A failure (no permission, no device) is logged once
+  # in plain words and retried with backoff, 5 s doubling to 1 min: fixing
+  # group membership or the service config shouldn't need a restart, and a
+  # missing permission shouldn't become a crash loop.
   @impl true
+  def handle_info(:open_fb, state) do
+    case open_fb(state) do
+      {:ok, geometry} ->
+        if state.fb_error, do: Logger.info("#{state.fb_path}: opened after all")
+        send(self(), :poll)
+
+        {:noreply,
+         %{state | fb_open: true, fb_error: nil, width: geometry.width, height: geometry.height}}
+
+      {:error, reason} ->
+        message = explain(state.fb_path, reason)
+        if message != state.fb_error, do: Logger.error(message <> "; will keep retrying")
+        retry = min(5_000 * Integer.pow(2, state.fb_failures), 60_000)
+        Process.send_after(self(), :open_fb, retry)
+        {:noreply, %{state | fb_error: message, fb_failures: min(state.fb_failures + 1, 4)}}
+    end
+  end
+
   def handle_info(:poll, state) do
     Process.send_after(self(), :poll, @poll_ms)
     active = foreground_vt(state.active_file) == state.vt
@@ -93,10 +118,18 @@ defmodule BeamHud.Display.Ticker do
     state =
       case Render.fb(@backend, list) do
         {:ok, draw_us, _bands} ->
-          %{state | frames: state.frames + 1, last_draw_us: draw_us, last_build_us: build_us}
+          %{
+            state
+            | frames: state.frames + 1,
+              last_draw_us: draw_us,
+              last_build_us: build_us,
+              frame_error: nil
+          }
 
         {:error, reason} ->
-          tap(state, fn _ -> Logger.warning("frame not drawn: #{inspect(reason)}") end)
+          # Once per distinct error, not every frame.
+          if reason != state.frame_error, do: Logger.warning("frame not drawn: #{reason}")
+          %{state | frame_error: reason}
       end
 
     interval = frame_interval(meta.sensors, state)
@@ -108,7 +141,8 @@ defmodule BeamHud.Display.Ticker do
 
   @impl true
   def handle_call(:stats, _from, state) do
-    {:reply, Map.take(state, [:frames, :visible, :last_draw_us, :last_build_us, :interval_ms]),
+    {:reply,
+     Map.take(state, [:frames, :visible, :last_draw_us, :last_build_us, :interval_ms, :fb_error]),
      state}
   end
 
@@ -139,9 +173,17 @@ defmodule BeamHud.Display.Ticker do
 
   defp kd(state, graphics?) do
     case Render.kd_mode(@backend, state.tty, graphics?) do
-      :ok -> :ok
-      {:ok, _} -> :ok
-      {:error, reason} -> Logger.warning("KDSETMODE: #{reason}")
+      :ok ->
+        :ok
+
+      {:ok, _} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning(
+          "#{reason} (KDSETMODE needs the tty as controlling terminal, or " <>
+            "CAP_SYS_TTY_CONFIG); the console may draw over the dashboard"
+        )
     end
   end
 
@@ -172,6 +214,36 @@ defmodule BeamHud.Display.Ticker do
       |> Enum.min(fn -> 1000 end)
 
     fastest |> max(floor_ms) |> min(1000)
+  end
+
+  # ------------------------------------------------------------------ framebuffer
+
+  defp open_fb(state) do
+    geometry = geometry(state.fb_path, state.size)
+
+    case Render.open_fb(@backend, state.fb_path, geometry.width, geometry.height, geometry.stride) do
+      :ok -> {:ok, geometry}
+      {:error, reason} -> {:error, reason}
+    end
+  rescue
+    e -> {:error, Exception.message(e)}
+  end
+
+  @doc "One plain line about why the framebuffer can't be used."
+  def explain(path, reason) do
+    reason = to_string(reason)
+
+    cond do
+      reason =~ ~r/permission denied|eacces/i ->
+        "#{path}: permission denied. The user running beam-hud needs the video group " <>
+          "(log in again after adding it), or the service needs DeviceAllow for it"
+
+      reason =~ ~r/no such file|enoent/i ->
+        "#{path}: no such device. Is there a framebuffer console (fbcon / simpledrm)?"
+
+      true ->
+        "#{path}: #{reason}"
+    end
   end
 
   # ------------------------------------------------------------------ geometry

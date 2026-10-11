@@ -67,6 +67,28 @@ defmodule BeamHud.DisplayTest do
     assert Ticker.frame_interval([], %{state | max_fps: 10}) == 1000
   end
 
+  test "an unopenable framebuffer is one clear log line and a retry, not a crash" do
+    stop_supervised!(BeamHud.Display)
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        start_supervised!(
+          {BeamHud.Display, backend: :rust, fb: "/dev/fb0-nonexistent", size: nil}
+        )
+
+        Process.sleep(300)
+        assert %{fb_error: "/dev/fb0-nonexistent: " <> _, frames: 0} = Ticker.stats()
+      end)
+
+    assert log =~ "will keep retrying"
+    refute log =~ "MatchError"
+  end
+
+  test "permission problems are explained" do
+    assert Ticker.explain("/dev/fb0", "/dev/fb0: Permission denied (os error 13)") =~
+             "video group"
+  end
+
   test "the foreground VT name", %{active: active} do
     assert Ticker.foreground_vt(active) == "tty1"
     assert Ticker.foreground_vt("/nonexistent") == nil
