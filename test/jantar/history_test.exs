@@ -92,9 +92,9 @@ defmodule Jantar.HistoryTest do
   test "archives consolidate each minute and hour to min, mean and max" do
     s = unique(:archived)
     History.declare(s, 3 * 3_600_000)
-    # Start on a wall-clock minute, so the steps are predictable.
+    # Start on a wall-clock hour, so the minute and hour steps are predictable.
     offset = System.system_time(:millisecond) - System.monotonic_time(:millisecond)
-    t0 = 60_000 - rem(offset, 60_000) + 60_000
+    t0 = 3_600_000 - rem(offset, 3_600_000) + 3_600_000
 
     # Three minutes: values 1, 2, 3 in each, plus a gap that isn't counted.
     for m <- 0..2,

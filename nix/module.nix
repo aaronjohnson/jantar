@@ -96,6 +96,20 @@ in
       description = "Frame rate cap on battery.";
     };
 
+    usbBays = mkOption {
+      type = types.attrsOf types.str;
+      default = { };
+      example = {
+        "3-3" = "port1";
+      };
+      description = ''
+        Which USB-C port (typec portN) each USB device path sits behind, for
+        the PORTS panel. Firmware often doesn't say, so find it by plugging a
+        device into each bay and reading its path from /sys/bus/usb/devices
+        (a USB 3 device may also appear on a second path).
+      '';
+    };
+
     powercap = mkOption {
       type = types.bool;
       default = false;
@@ -167,6 +181,7 @@ in
         JANTAR_THEME = if cfg.themeFile != null then "file:${cfg.themeFile}" else cfg.theme;
         JANTAR_MAX_FPS = toString cfg.maxFps;
         JANTAR_BATTERY_MAX_FPS = toString cfg.batteryMaxFps;
+        JANTAR_USB_BAYS = lib.concatStringsSep "," (lib.mapAttrsToList (k: v: "${k}=${v}") cfg.usbBays);
         RELEASE_TMP = "/run/jantar";
         LANG = "C.UTF-8";
       };

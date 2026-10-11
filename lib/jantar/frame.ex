@@ -54,6 +54,7 @@ defmodule Jantar.Frame do
     :battery,
     :charger,
     :rapl,
+    :ports,
     :npu,
     :gpu,
     :wifi,
@@ -166,7 +167,7 @@ defmodule Jantar.Frame do
     ],
     [
       {"THERMALS", :red, ["TEMP", "CLOCK", "FAN"]},
-      {"POWER", :green, ["POWER", "CHIP"]},
+      {"POWER", :green, ["POWER", "CHIP", "PORTS"]},
       {"NETWORK", :blue, ["WIFI", "NET", "LINK"]}
     ]
   ]
@@ -400,6 +401,14 @@ defmodule Jantar.Frame do
       s.wifi && s.wifi.ok != false && wifi_panel(s.wifi, hist),
       s[:link] && link_panel(s[:link], s[:wifi_events], hist),
       s[:rapl] && map_size(s.rapl) > 0 && chip_panel(s.rapl, hist),
+      s[:ports] &&
+        %{
+          kind: :ports,
+          sensor: :ports,
+          title: "PORTS",
+          ports: s.ports.ports,
+          other: s.ports.other
+        },
       s.cpu &&
         dial(:cpu, "LOAD", :yellow, [{:cpu, 1, :yellow, :yellow}], hist,
           guides: [0.5, 0.75],
@@ -533,6 +542,27 @@ defmodule Jantar.Frame do
       ]
     )
   end
+
+  # What a bay box says: `{tint, [{text, bold?}]}`.
+  defp bay_text(%{charger: %{watts: w, volts: v, amps: a}}),
+    do:
+      {:green,
+       [
+         {"charger", true},
+         {"#{round(v)} V #{Float.round(a, 1)} A", false},
+         {"#{round(w)} W", false}
+       ]}
+
+  defp bay_text(%{partner: true, role: :sink}), do: {:green, [{"charger", true}]}
+
+  defp bay_text(%{devices: [_ | _] = names}),
+    do: {:cyan, Enum.map(Enum.take(names, 3), &{String.slice(&1, 0, 14), true})}
+
+  defp bay_text(%{partner: true, role: :source}),
+    do: {:orange, [{"powering", true}, {"a device", false}]}
+
+  defp bay_text(%{partner: true}), do: {:cyan, [{"connected", true}]}
+  defp bay_text(_), do: {:dim, [{"empty", false}]}
 
   defp disk_info(d) do
     temp = if d.temp_c, do: "  #{round(d.temp_c)}°C", else: ""
@@ -695,6 +725,58 @@ defmodule Jantar.Frame do
         y0 + d + trunc(4 * u),
         [{"CPU", :yellow, true}, {"  " <> Format.pct(cpu.load), :fg, false}],
         info
+      )
+    ]
+  end
+
+  # The four USB-C bays as seen from above: left and right sides, back
+  # (hinge) on top. Each box says what's in it.
+  defp tile(ctx, %{kind: :ports} = p, cx, y0, d) do
+    %{c: c, u: u} = ctx
+    gap = 8 * u
+    {bw, bh} = {(d - gap) / 2, (d * 0.8 - gap) / 2}
+    x0 = cx - d / 2
+    top = y0 + d * 0.1
+    by_port = Map.new(p.ports, &{&1.port, &1})
+    layout = [{"port3", 0, 0}, {"port0", 1, 0}, {"port2", 0, 1}, {"port1", 1, 1}]
+
+    boxes =
+      for {port, col, row} <- layout, bay = by_port[port] do
+        x = x0 + col * (bw + gap)
+        y = top + row * (bh + gap)
+        {tint, lines} = bay_text(bay)
+        size = 11 * u
+
+        [
+          DL.rects([{x, y, bw, bh, DL.mix(Map.fetch!(c, tint), c.bg, 0.18)}]),
+          DL.text(x + bw / 2, y + 4 * u, :center, :top, [{bay.bay, 10 * u, false, c.dim}]),
+          for {{text, bold}, k} <- Enum.with_index(lines) do
+            DL.text(
+              x + bw / 2,
+              y + bh / 2 + (k - (length(lines) - 1) / 2) * size * 1.3,
+              :center,
+              :middle,
+              [
+                {text, size, bold, Map.fetch!(c, if(tint == :dim, do: :dim, else: tint))}
+              ]
+            )
+          end
+        ]
+      end
+
+    other = p.other
+
+    [
+      boxes,
+      captions(
+        ctx,
+        cx,
+        y0 + d + trunc(4 * u),
+        [{"PORTS", :green, true}],
+        [
+          {"seen from above, hinge at the top", :fg},
+          {if(other == [], do: "", else: "unmapped: " <> Enum.join(other, ", ")), :muted}
+        ]
       )
     ]
   end

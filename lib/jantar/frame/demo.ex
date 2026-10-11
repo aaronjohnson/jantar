@@ -102,6 +102,43 @@ defmodule Jantar.Frame.Demo do
         links: [%{id: 1, freq_mhz: 5180, active: false}, %{id: 2, freq_mhz: 6375, active: true}]
       },
       link: %{route: true, gateway: true, iface: "wlan0", gateway_ip: "192.168.1.1", ipv6: false},
+      ports: %{
+        ports: [
+          %{
+            port: "port0",
+            bay: "right back",
+            partner: false,
+            role: :sink,
+            charger: nil,
+            devices: []
+          },
+          %{
+            port: "port1",
+            bay: "right front",
+            partner: true,
+            role: :source,
+            charger: nil,
+            devices: ["Security key"]
+          },
+          %{
+            port: "port2",
+            bay: "left front",
+            partner: false,
+            role: :sink,
+            charger: nil,
+            devices: []
+          },
+          %{
+            port: "port3",
+            bay: "left back",
+            partner: true,
+            role: :sink,
+            charger: %{volts: 20.0, amps: 5.0, watts: 100.0},
+            devices: []
+          }
+        ],
+        other: []
+      },
       rapl: %{platform: 11.2, package: 6.4, cores: 3.9, graphics: 0.7, memory: 0.6},
       swap: %{in: 0.0, out: 0.0, used_kb: 812_000, total_kb: 67_108_860},
       disk: %{

@@ -10,6 +10,17 @@ if config_env() == :prod do
   # systemd's StateDirectory=: history is saved there on shutdown.
   if dir = System.get_env("STATE_DIRECTORY"), do: config(:jantar, state_dir: dir)
 
+  # Which USB-C port each USB device path is behind: "3-3=port1,4-2=port1".
+  if bays = System.get_env("JANTAR_USB_BAYS") do
+    map =
+      for pair <- String.split(bays, ",", trim: true),
+          [path, port] <- [String.split(pair, "=", parts: 2)],
+          into: %{},
+          do: {String.trim(path), String.trim(port)}
+
+    config :jantar, usb_bays: map
+  end
+
   # Theme: "dark" or "light" pins it; "file:/some/path" follows a file that
   # contains "dark" or "light" (checked every minute); unset asks gsettings.
   case env.("JANTAR_THEME", "") do
