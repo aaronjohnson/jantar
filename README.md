@@ -8,10 +8,6 @@ sensor has moved over the last few minutes, not just its current value.
 
 ![jantar, Solarized dark](docs/screenshots/dark.png)
 
-Named after the [Jantar Mantar](https://en.wikipedia.org/wiki/Jantar_Mantar,_Jaipur)
-observatories (Sanskrit *yantra*, "instrument"): stone sundials and polar
-instruments for following the sun and moon.
-
 ## Reading the dials
 
 Time runs clockwise from the top, one lap per period, and the distance from
@@ -118,6 +114,17 @@ jantar began as a rewrite of `hud`, a Python dashboard in
 [dotfiles](https://github.com/aaronjohnson/dotfiles), and is checked against
 it: `tools/hud_oracle.py` runs hud's own sampler over recorded `/proc` and
 `/sys` captures, and the tests compare.
+
+## Colophon
+
+jantar is named after the [Jantar Mantar](https://en.wikipedia.org/wiki/Jantar_Mantar,_Jaipur)
+observatories (Sanskrit *yantra*, "instrument"): stone sundials and polar
+instruments for following the sun and moon, which its dials imitate. The
+default branch is `dhruva`, Sanskrit for the pole star: the fixed point a
+polar dial turns around.
+
+The dials are drawn in [Solarized](https://ethanschoonover.com/solarized/)
+and set in DejaVu Sans Mono.
 
 ## Licence
 
