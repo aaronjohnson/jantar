@@ -1,0 +1,113 @@
+defmodule BeamHud.Frame.Demo do
+  @moduledoc """
+  A made-up but realistic snapshot for `BeamHud.Frame`: half an hour of
+  history at the real sampling rates (so 250 ms series are dense and drawn as
+  bands), every sensor present, and a CI build in progress. Deterministic
+  (seeded random numbers), so it serves golden tests and side-by-side
+  backend comparisons: `mix hud.png --demo`.
+  """
+
+  @now 10_000_000
+
+  def snapshot do
+    :rand.seed(:exsss, {1, 2, 3})
+
+    series = %{
+      :cpu => series(300_000, 250, fn t -> busy(t, 0.12, 0.55) end),
+      :clock => series(1_800_000, 1000, fn t -> 1.2 + 1.6 * wave(t, 400_000) + noise(0.3) end),
+      :mem => series(300_000, 1000, fn t -> 0.31 + 0.02 * wave(t, 120_000) end),
+      :rx => series(300_000, 250, fn t -> burst(t, 2.0e4, 4.0e6) end),
+      :tx => series(300_000, 250, fn t -> burst(t, 5.0e3, 3.0e5) end),
+      :temp => series(1_800_000, 500, fn t -> 52 + 30 * wave(t, 400_000) + noise(2) end),
+      :power =>
+        series(1_800_000, 1000, fn t ->
+          if t > 1_200_000, do: 24 + noise(4), else: -(9 + 6 * wave(t, 300_000) + noise(1.5))
+        end),
+      :fan => series(1_800_000, 1000, fn t -> 1800 + 2600 * wave(t, 400_000) + noise(60) end),
+      :npu =>
+        series(300_000, 250, fn t ->
+          if rem(div(t, 40_000), 3) == 0, do: 0.05 + noise(0.04), else: 0.0
+        end),
+      :wifi => series(1_800_000, 20_000, fn _t -> 58 + noise(5) end),
+      {:gpu, "gt0-rc"} => series(300_000, 250, fn t -> busy(t, 0.02, 0.3) end),
+      {:gpu, "gt1-mc"} => series(300_000, 250, fn t -> busy(t, 0.002, 0.02) end)
+    }
+
+    kinds = List.duplicate("P", 4) ++ List.duplicate("E", 8) ++ List.duplicate("LP", 4)
+
+    sensors = %{
+      cpu: %{
+        load: 0.34,
+        core_loads: for(i <- 0..15, do: abs(:math.sin(i * 1.7)) * 0.9),
+        ids: Enum.to_list(0..15),
+        kinds: kinds,
+        max_mhz:
+          List.duplicate(4700.0, 4) ++ List.duplicate(3700.0, 8) ++ List.duplicate(3300.0, 4),
+        freqs_mhz: for(i <- 0..15, do: 400.0 + 3000 * abs(:math.cos(i))),
+        clock_ghz: 2.1
+      },
+      memory: %{
+        total_kb: 65_309_752,
+        available_kb: 45_000_000,
+        used_kb: 20_309_752,
+        used: 0.311,
+        swap_total_kb: 67_108_860,
+        swap_used_kb: 0
+      },
+      net: %{rx: 1.3e6, tx: 4.2e4, rx_total: 28_000_000_000, tx_total: 3_100_000_000},
+      thermal: %{temp_c: 71.0, path: "/sys/class/hwmon/hwmon5/temp1_input"},
+      fan: %{rpm: 3400, path: "/sys/class/hwmon/hwmon7/fan1_input"},
+      battery: %{status: "Charging", watts: 24.3, pct: 81, minutes: 38.0},
+      charger: %{watts: 100.0, port: "/sys/class/power_supply/ucsi-source-psy-USBC000:002"},
+      npu: %{load: 0.06, awake: true, mhz: 1400, max_mhz: 2050, mem_bytes: 68_714_496.0},
+      gpu: %{
+        driver: "xe",
+        gts: [
+          %{name: "gt0-rc", busy: 0.21, mhz: 1650, max_mhz: 2500.0},
+          %{name: "gt1-mc", busy: 0.01, mhz: 0, max_mhz: 1200.0}
+        ]
+      },
+      wifi: %{
+        ok: true,
+        signal: 61,
+        ssid: "Network-4",
+        dbm: -57,
+        width_mhz: 320,
+        bitrate_mbit: 1152.9,
+        links: [%{id: 1, freq_mhz: 5180, active: false}, %{id: 2, freq_mhz: 6375, active: true}]
+      },
+      ci_runner: %{
+        installed: true,
+        active: true,
+        failed: false,
+        job: 2412.0,
+        step: "nix build .#openvino",
+        readable: true,
+        progress: %{package: "llvm-21.1.0", done: 2730.0, total: 4120.0},
+        eta: 1260.0
+      }
+    }
+
+    %{now: @now, series: series, sensors: sensors}
+  end
+
+  # A series sampled every `every` ms over `window` ms ending now, as History holds it.
+  defp series(window, every, fun) do
+    samples = for age <- window..0//-every, do: {@now - age, fun.(window - age) / 1}
+    %{samples: samples, window_ms: window}
+  end
+
+  defp wave(t, period), do: (1 + :math.sin(2 * :math.pi() * t / period)) / 2
+  defp noise(scale), do: (:rand.uniform() - 0.5) * 2 * scale
+
+  defp busy(t, base, peak),
+    do: max(0.0, min(1.0, base + (peak - base) * wave(t, 90_000) ** 4 + noise(base)))
+
+  defp burst(t, base, peak),
+    do:
+      max(
+        0.0,
+        base * (1 + noise(0.5)) +
+          if(rem(div(t, 7000), 9) == 0, do: peak * :rand.uniform(), else: 0)
+      )
+end

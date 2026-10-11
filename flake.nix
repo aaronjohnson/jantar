@@ -17,11 +17,16 @@
           beam.elixir
           beam.rebar3
           pkgs.gleam
-          # Later milestones: the Rust NIF (Rustler) and the C/cairo port.
+          # Renderers: the Rust NIF (Rustler) and the C/cairo port.
           pkgs.cargo
           pkgs.rustc
           pkgs.cairo
+          pkgs.freetype
+          pkgs.fontconfig
           pkgs.pkg-config
+          pkgs.gnumake
+          pkgs.gcc
+          pkgs.dejavu_fonts
         ];
 
         shellHook = ''
@@ -29,6 +34,8 @@
           export MIX_HOME=$PWD/.nix-mix
           export HEX_HOME=$PWD/.nix-hex
           export ERL_AFLAGS="-kernel shell_history enabled"
+          # The font both renderers draw with (the same one hud --fb uses).
+          export HUD_FONT_DIR=${pkgs.dejavu_fonts}/share/fonts/truetype
         '';
       };
     };
