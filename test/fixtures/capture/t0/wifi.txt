@@ -1,0 +1,82 @@
+ :85:Network-1
+ :85:Network-2
+ :84:Network-2
+ :84:Network-3
+ :84:Network-2
+ :84:Network-2
+ :82:Network-1
+ :82:Network-3
+ :77:Network-4
+ :77:Network-1
+ :77:Network-2
+ :77:Network-2
+ :77:Network-3
+ :72:Network-4
+ :72:Network-1
+ :72:Network-2
+ :72:Network-2
+ :72:Network-3
+*:63:Network-4
+ :55:Network-4
+ :55:Network-1
+ :55:Network-3
+ :55:Network-2
+ :55:Network-2
+ :50:Network-2
+ :50:Network-5
+ :50:Network-2
+ :47:Network-2
+ :45:Network-2
+ :42:Network-2
+ :42:Network-4
+ :42:Network-2
+ :42:Network-5
+ :42:Network-2
+ :40:Network-4
+ :40:Network-1
+ :40:Network-3
+ :34:Network-2
+ :34:Network-5
+ :34:Network-2
+ :34:Network-4
+ :25:Network-6
+ :24:Network-2
+ :20:Network-2
+ :19:Network-2
+ :15:Network-2
+ :15:Network-2
+ :15:Network-2
+ :14:Network-7
+ :14:Network-2
+ :14:Network-7
+@@IW
+Interface wlp0s20f3
+	ifindex 2
+	wdev 0x1
+	addr 02:00:00:00:00:01
+	ssid Network-4
+	type managed
+	wiphy 0
+	multicast TXQ:
+		qsz-byt	qsz-pkt	flows	drops	marks	overlmt	hashcol	tx-bytes	tx-packets
+		0	0	0	0	0	0	0	0		0
+	MLD with links:
+	 - link ID  1 link addr 02:00:00:00:00:02
+	   txpower 22.00 dBm
+	 - link ID  2 link addr 02:00:00:00:00:03
+	   channel 85 (6375 MHz), width: 320 MHz, center1: 6265 MHz
+	   txpower 22.00 dBm
+Connected to 02:00:00:00:00:04 (on wlp0s20f3)
+	SSID: Network-4
+	Link 1 BSSID 02:00:00:00:00:05
+		freq: 5180.0
+	Link 2 BSSID 02:00:00:00:00:06
+		freq: 6375.0
+MLD 02:00:00:00:00:04 stats:
+	RX: 466272867 bytes (336136 packets)
+	TX: 108502016 bytes (46349 packets)
+	signal: -57 dBm
+	tx bitrate: 1152.9 MBit/s 320MHz EHT-MCS 3 EHT-NSS 2 EHT-GI 0
+	bss flags: 
+	dtim period: 1
+	beacon int: 100
