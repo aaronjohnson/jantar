@@ -194,6 +194,7 @@ defmodule Jantar.Frame do
       s.npu &&
         dial(:npu, "NPU", :green, [{:npu, 1, :green, :green}], hist,
           scale: {:log, -3.0, 0.0},
+          idle_floor: true,
           guides: [0.01, 0.1],
           centre: [
             {Format.pct(s.npu.load), :green, true},
@@ -297,6 +298,7 @@ defmodule Jantar.Frame do
 
     dial(:gpu, "GPU", :orange, for(g <- gts, do: {{:gpu, g.gt.name}, 1, g.role, g.role}), hist,
       scale: {:log, -3.0, 0.0},
+      idle_floor: true,
       guides: [0.01, 0.1],
       centre: centre,
       info: [
@@ -353,12 +355,32 @@ defmodule Jantar.Frame do
       sensor: sensor,
       title: title,
       tint: tint,
-      series: for({name, sign, role, neg} <- series, do: {hist.(name).samples, sign, role, neg}),
+      series:
+        for(
+          {name, sign, role, neg} <- series,
+          do: {floor_idle(hist.(name).samples, opts), sign, role, neg}
+        ),
       polar: :jantar_core@polar.dial(scale, opts[:mirrored] || false, window, period),
       guides: opts[:guides] || [],
       centre: opts[:centre] || [],
       info: opts[:info] || []
     }
+  end
+
+  # idle_floor: on a log scale, values below its bottom (0 = idle) have no
+  # place and would leave gaps. Put them on the bottom ring instead, so an
+  # idle GPU or a sleeping NPU reads as a flat trace on the inner ring, not as
+  # scattered dots. Missing readings (nil) stay gaps.
+  defp floor_idle(samples, opts) do
+    case {opts[:idle_floor], opts[:scale]} do
+      {true, {:log, a, _}} ->
+        # A hair above the bottom: polar.visible wants a reach above 0.
+        floor = :math.pow(10, a) * 1.05
+        for {t, v} <- samples, do: {t, if(is_number(v) and v < floor, do: floor, else: v)}
+
+      _ ->
+        samples
+    end
   end
 
   defp range({:linear, lo, hi}, nil, _samples), do: {lo, hi}
@@ -717,7 +739,7 @@ defmodule Jantar.Frame do
   # ------------------------------------------------------------------ header and footer
 
   defp header(%{c: c, u: u, w: w}, snap, margin, head_h, opts) do
-    host = Keyword.get_lazy(opts, :host, fn -> :inet.gethostname() |> elem(1) |> to_string() end)
+    host = Keyword.get_lazy(opts, :host, &hostname/0)
     clock = Keyword.get_lazy(opts, :clock, &local_time/0)
     bat = snap.sensors.battery
     wifi = snap.sensors.wifi
@@ -823,4 +845,14 @@ defmodule Jantar.Frame do
 
   defp max_text(_prefix, [], _fun), do: ""
   defp max_text(prefix, values, fun), do: prefix <> fun.(Enum.max(values))
+
+  # From the kernel, not :inet.gethostname/0: that needs an IP socket, which
+  # the sandboxed service can't open, and then answers "nohost.nodomain".
+  @doc false
+  def hostname do
+    case :file.read_file("/proc/sys/kernel/hostname", [:raw]) do
+      {:ok, name} -> String.trim(name)
+      {:error, _} -> :inet.gethostname() |> elem(1) |> to_string()
+    end
+  end
 end

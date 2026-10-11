@@ -42,7 +42,7 @@ defmodule Mix.Tasks.Jantar.Dump do
 
   @doc false
   def render do
-    {:ok, host} = :inet.gethostname()
+    host = Jantar.Frame.hostname()
     time = Time.utc_now() |> Time.truncate(:second) |> Time.to_string()
     mode = Jantar.Mode.get()
 
