@@ -190,3 +190,29 @@ fn count(i: Int, n: Int, pred: fn(Int) -> Bool) -> Int {
 
 @external(erlang, "erlang", "float")
 fn int_to_float(i: Int) -> Float
+
+// ------------------------------------------------------------------ dense series
+
+pub fn dense_test() {
+  // 1200 samples on one lap of ~750 px with a dot every 3 px: dense.
+  assert polar.dense(1200, 1, 250.0)
+  // 1800 samples over 15 laps = 120 per lap: dots.
+  assert !polar.dense(1800, 15, 250.0)
+}
+
+pub fn buckets_test() {
+  // Ages 1100, 1000 (bucket 1) and 900, 100, 0 ms (bucket 0) at now = 2000.
+  let samples = [
+    #(900, 4.0),
+    #(1000, 1.0),
+    #(1100, 3.0),
+    #(1900, 5.0),
+    #(2000, 7.0),
+  ]
+  assert polar.buckets(samples, 2000, 1000)
+    == [
+      polar.Bucket(age_ms: 1500, lo: 1.0, hi: 4.0, mean: 2.5, count: 2),
+      polar.Bucket(age_ms: 500, lo: 3.0, hi: 7.0, mean: 5.0, count: 3),
+    ]
+  assert polar.buckets([], 0, 1000) == []
+}

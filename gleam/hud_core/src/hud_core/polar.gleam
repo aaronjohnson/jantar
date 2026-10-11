@@ -229,3 +229,94 @@ fn sqrt(x: Float) -> Float {
     Error(_) -> 0.0
   }
 }
+
+// ------------------------------------------------------------------ dense series
+
+/// A run of samples summarised for drawing: when a dial has more samples
+/// than pixels to put them on, it draws one bucket per few pixels of arc as a
+/// min..max band with a line through the mean, instead of a blur of dots.
+pub type Bucket {
+  Bucket(age_ms: Int, lo: Float, hi: Float, mean: Float, count: Int)
+}
+
+/// Whether a series is too dense for distinct dots: more samples per lap than
+/// `dots_per_lap` (e.g. a third of the lap's length in pixels).
+pub fn dense(samples: Int, laps: Int, dots_per_lap: Float) -> Bool {
+  int.to_float(samples) /. int.to_float(int.max(1, laps)) >. dots_per_lap
+}
+
+/// Group samples #(t_ms, value), oldest first, into buckets `bucket_ms` wide
+/// by age at `now_ms`. Returns buckets oldest first; `age_ms` is the middle
+/// of the bucket's age range.
+pub fn buckets(
+  samples: List(#(Int, Float)),
+  now_ms: Int,
+  bucket_ms: Int,
+) -> List(Bucket) {
+  let width = int.max(1, bucket_ms)
+  bucket_loop(samples, now_ms, width, None, [])
+}
+
+type Open {
+  Open(index: Int, lo: Float, hi: Float, sum: Float, count: Int)
+}
+
+fn bucket_loop(
+  samples: List(#(Int, Float)),
+  now: Int,
+  width: Int,
+  open: Option(Open),
+  done: List(Bucket),
+) -> List(Bucket) {
+  case samples, open {
+    [], None -> reverse(done)
+    [], Some(o) -> reverse([close(o, width), ..done])
+    [#(t, v), ..rest], _ -> {
+      let index = int.max(0, now - t) / width
+      case open {
+        Some(o) if o.index == index ->
+          bucket_loop(
+            rest,
+            now,
+            width,
+            Some(Open(
+              index,
+              float.min(o.lo, v),
+              float.max(o.hi, v),
+              o.sum +. v,
+              o.count + 1,
+            )),
+            done,
+          )
+        Some(o) ->
+          bucket_loop(rest, now, width, Some(Open(index, v, v, v, 1)), [
+            close(o, width),
+            ..done
+          ])
+        None ->
+          bucket_loop(rest, now, width, Some(Open(index, v, v, v, 1)), done)
+      }
+    }
+  }
+}
+
+fn close(o: Open, width: Int) -> Bucket {
+  Bucket(
+    age_ms: o.index * width + width / 2,
+    lo: o.lo,
+    hi: o.hi,
+    mean: o.sum /. int.to_float(o.count),
+    count: o.count,
+  )
+}
+
+fn reverse(xs: List(a)) -> List(a) {
+  do_reverse(xs, [])
+}
+
+fn do_reverse(xs: List(a), acc: List(a)) -> List(a) {
+  case xs {
+    [] -> acc
+    [x, ..rest] -> do_reverse(rest, [x, ..acc])
+  }
+}
