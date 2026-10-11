@@ -14,6 +14,13 @@ defmodule Jantar.Display.Ticker do
       by `:max_fps`, and by `:battery_max_fps` on battery.
     * On becoming hidden, or on shutdown: KD_TEXT, Mode not visible. The
       sensors keep collecting either way.
+
+  With a real tty (KD_GRAPHICS), the VT is first put in process mode
+  (VT_SETMODE). The kernel ignores switches away from a KD_GRAPHICS VT in
+  automatic mode, so without it Ctrl+Alt+F1 would do nothing. In process
+  mode the kernel sends SIGUSR2 (`Jantar.Display.VtSignal`) when someone
+  switches away, waits for VT_RELDISP, and sends it again after switching
+  back. If process mode can't be set, KD_GRAPHICS isn't used at all.
   """
   use GenServer
   require Logger
@@ -53,6 +60,8 @@ defmodule Jantar.Display.Ticker do
       max_fps: Keyword.get(opts, :max_fps, 4),
       battery_max_fps: Keyword.get(opts, :battery_max_fps, 2),
       visible: false,
+      vt_process: false,
+      held: false,
       frame_timer: nil,
       frames: 0,
       last_draw_us: nil,
@@ -76,6 +85,7 @@ defmodule Jantar.Display.Ticker do
       {:ok, geometry} ->
         if state.fb_error, do: Logger.info("#{state.fb_path}: opened after all")
         send(self(), :poll)
+        state = if state.kd_mode and not state.vt_process, do: claim_vt(state), else: state
 
         {:noreply,
          %{state | fb_open: true, fb_error: nil, width: geometry.width, height: geometry.height}}
@@ -102,6 +112,22 @@ defmodule Jantar.Display.Ticker do
 
     {:noreply, state}
   end
+
+  # The kernel's signal for our VT in process mode. Releases and acquires
+  # alternate, so whether we hold the VT says which this is.
+  def handle_info(:vt_signal, %{vt_process: true, held: true} = state) do
+    state = if state.visible, do: hide(state, false), else: state
+    vt_reldisp(state, 1)
+    {:noreply, %{state | held: false}}
+  end
+
+  def handle_info(:vt_signal, %{vt_process: true} = state) do
+    vt_reldisp(state, 2)
+    state = if state.visible, do: state, else: show(state)
+    {:noreply, %{state | held: true}}
+  end
+
+  def handle_info(:vt_signal, state), do: {:noreply, state}
 
   def handle_info(:frame, %{visible: false} = state), do: {:noreply, %{state | frame_timer: nil}}
 
@@ -149,6 +175,14 @@ defmodule Jantar.Display.Ticker do
   @impl true
   def terminate(_reason, state) do
     if state.visible, do: hide(state)
+
+    # Back to text and automatic switching, even if we're not on screen:
+    # the VT stays in KD_GRAPHICS while switched away.
+    if state.vt_process do
+      kd(state, false)
+      Jantar.Render.Native.vt_process(state.tty, 0)
+    end
+
     :ok
   end
 
@@ -163,11 +197,13 @@ defmodule Jantar.Display.Ticker do
     %{state | visible: true}
   end
 
-  defp hide(state) do
+  # text?: false when releasing the VT in process mode: it stays in
+  # KD_GRAPHICS while away, so it doesn't flash its text console on the way.
+  defp hide(state, text? \\ true) do
     Logger.info("#{state.vt} is in the background: not drawing")
     Mode.set(:visible, false)
     if state.frame_timer, do: Process.cancel_timer(state.frame_timer)
-    if state.kd_mode, do: kd(state, false)
+    if state.kd_mode and text?, do: kd(state, false)
     %{state | visible: false, frame_timer: nil}
   end
 
@@ -189,6 +225,34 @@ defmodule Jantar.Display.Ticker do
           "#{reason} (KDSETMODE needs the tty as controlling terminal, or " <>
             "CAP_SYS_TTY_CONFIG); the console may draw over the dashboard"
         )
+    end
+  end
+
+  # Process mode for our VT, with SIGUSR2 routed to us. Without it, KD_GRAPHICS
+  # would make the VT impossible to switch away from, so on failure kd_mode is
+  # turned off: the console may then draw over the dashboard, but never traps
+  # anyone on it.
+  defp claim_vt(state) do
+    Jantar.Display.VtSignal.install()
+
+    case Jantar.Render.Native.vt_process(state.tty, Jantar.Display.VtSignal.number()) do
+      ok when ok in [:ok, {:ok, :ok}] ->
+        %{state | vt_process: true, held: foreground_vt(state.active_file) == state.vt}
+
+      {:error, reason} ->
+        Logger.warning(
+          "#{reason}: not switching #{state.vt} to graphics mode, since it couldn't " <>
+            "then be switched away from; the console may draw over the dashboard"
+        )
+
+        %{state | kd_mode: false}
+    end
+  end
+
+  defp vt_reldisp(state, arg) do
+    case Jantar.Render.Native.vt_reldisp(state.tty, arg) do
+      ok when ok in [:ok, {:ok, :ok}] -> :ok
+      {:error, reason} -> Logger.warning("#{reason}")
     end
   end
 

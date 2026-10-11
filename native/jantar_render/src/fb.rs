@@ -83,3 +83,39 @@ pub fn kd_mode(tty: &str, graphics: bool) -> Result<(), String> {
     let rc = unsafe { libc::ioctl(file.as_raw_fd(), KDSETMODE as _, mode) };
     if rc == 0 { Ok(()) } else { Err(format!("KDSETMODE on {}: {}", tty, std::io::Error::last_os_error())) }
 }
+
+/// VT_SETMODE on a tty: process mode with `signal` as both the release and
+/// the acquire signal (Some), or back to automatic switching (None).
+///
+/// In automatic mode the kernel ignores every switch away from a VT in
+/// KD_GRAPHICS (vt_ioctl.c, change_console), so Ctrl+Alt+F1 would do nothing.
+/// In process mode it asks the owning process instead, with the signal, and
+/// waits for VT_RELDISP. If that process is gone, the next switch resets the
+/// VT to text and automatic mode.
+pub fn vt_process(tty: &str, signal: Option<i32>) -> Result<(), String> {
+    #[repr(C)]
+    struct VtMode {
+        mode: libc::c_char,
+        waitv: libc::c_char,
+        relsig: libc::c_short,
+        acqsig: libc::c_short,
+        frsig: libc::c_short,
+    }
+    const VT_SETMODE: libc::c_ulong = 0x5602;
+    let file = OpenOptions::new().read(true).write(true).open(tty).map_err(|e| format!("{}: {}", tty, e))?;
+    let sig = signal.unwrap_or(0) as libc::c_short;
+    let mode = VtMode { mode: if signal.is_some() { 1 } else { 0 }, waitv: 0, relsig: sig, acqsig: sig, frsig: 0 };
+    // SAFETY: an ioctl on an fd we own, pointing at a struct of the kernel's layout.
+    let rc = unsafe { libc::ioctl(file.as_raw_fd(), VT_SETMODE as _, &mode as *const VtMode) };
+    if rc == 0 { Ok(()) } else { Err(format!("VT_SETMODE on {}: {}", tty, std::io::Error::last_os_error())) }
+}
+
+/// VT_RELDISP: 1 lets a pending switch away go ahead, 2 (VT_ACKACQ)
+/// acknowledges having been switched to.
+pub fn vt_reldisp(tty: &str, arg: i32) -> Result<(), String> {
+    const VT_RELDISP: libc::c_ulong = 0x5605;
+    let file = OpenOptions::new().read(true).write(true).open(tty).map_err(|e| format!("{}: {}", tty, e))?;
+    // SAFETY: a plain ioctl on an fd we own, with an integer argument.
+    let rc = unsafe { libc::ioctl(file.as_raw_fd(), VT_RELDISP as _, arg as libc::c_ulong) };
+    if rc == 0 { Ok(()) } else { Err(format!("VT_RELDISP on {}: {}", tty, std::io::Error::last_os_error())) }
+}

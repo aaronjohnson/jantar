@@ -28,13 +28,21 @@ pkgs.testers.runNixOSTest {
     machine.succeed("grep -q '^CapEff:\\s*0*$' /proc/$(systemctl show -p MainPID --value jantar)/status")
 
     with subtest("draws only while tty12 is in the foreground"):
-        machine.succeed("chvt 12")
+        machine.succeed("timeout 10 chvt 12")
         machine.wait_until_succeeds("journalctl -u jantar | grep -q 'tty12 is in the foreground: drawing'")
         machine.sleep(4)
         machine.screenshot("dashboard")
         machine.fail("journalctl -u jantar | grep -Eiq 'KDSETMODE|permission denied|frame not drawn'")
-        machine.succeed("chvt 1")
+        machine.succeed("timeout 10 chvt 1")
         machine.wait_until_succeeds("journalctl -u jantar | grep -q 'not drawing'")
+
+    with subtest("switching back and forth keeps working, and redraws each time"):
+        for _ in range(3):
+            machine.succeed("timeout 10 chvt 12")
+            machine.wait_until_succeeds("test \"$(cat /sys/class/tty/tty0/active)\" = tty12")
+            machine.succeed("timeout 10 chvt 2")
+            machine.wait_until_succeeds("test \"$(cat /sys/class/tty/tty0/active)\" = tty2")
+        machine.fail("journalctl -u jantar | grep -Eq 'VT_SETMODE|VT_RELDISP'")
 
     with subtest("a segfaulting renderer is restarted; the service keeps running"):
         pid = machine.succeed("systemctl show -p MainPID --value jantar").strip()
@@ -43,10 +51,25 @@ pkgs.testers.runNixOSTest {
         machine.wait_until_succeeds("pgrep -x cairo_port")
         assert machine.succeed("systemctl show -p MainPID --value jantar").strip() == pid
 
+    def drawing():
+        machine.wait_until_succeeds(
+            "journalctl -u jantar | grep -E 'in the (fore|back)ground' | tail -1 | grep -q foreground"
+        )
+
+    with subtest("a killed jantar doesn't trap anyone on its console"):
+        machine.succeed("timeout 10 chvt 12")
+        drawing()
+        machine.succeed("systemctl kill -s KILL jantar")
+        machine.succeed("timeout 10 chvt 1")
+        machine.wait_until_succeeds("test \"$(cat /sys/class/tty/tty0/active)\" = tty1")
+        machine.wait_for_unit("jantar.service")
+
     with subtest("stopping gives the console back"):
-        machine.succeed("chvt 12")
-        machine.wait_until_succeeds("journalctl -u jantar | grep -c 'is in the foreground' | grep -q 2")
+        machine.succeed("timeout 10 chvt 12")
+        drawing()
         machine.succeed("systemctl stop jantar")
+        machine.succeed("timeout 10 chvt 1")
+        machine.succeed("timeout 10 chvt 12")
         machine.fail("journalctl -u jantar | grep -q 'KDSETMODE text'")
         machine.sleep(1)
         machine.screenshot("after-stop")

@@ -75,6 +75,20 @@ fn kd_mode(tty: String, graphics: bool) -> NifResult<rustler::Atom> {
     Ok(rustler::types::atom::ok())
 }
 
+/// VT_SETMODE: process mode with this signal number (> 0), or automatic (0).
+#[rustler::nif(schedule = "DirtyIo")]
+fn vt_process(tty: String, signal: i32) -> NifResult<rustler::Atom> {
+    fb::vt_process(&tty, if signal > 0 { Some(signal) } else { None })?;
+    Ok(rustler::types::atom::ok())
+}
+
+/// VT_RELDISP: 1 = let the switch away happen, 2 = acknowledge a switch here.
+#[rustler::nif(schedule = "DirtyIo")]
+fn vt_reldisp(tty: String, arg: i32) -> NifResult<rustler::Atom> {
+    fb::vt_reldisp(&tty, arg)?;
+    Ok(rustler::types::atom::ok())
+}
+
 /// For the crash demo: a Rust panic. Rustler catches it at the NIF boundary
 /// and raises an Erlang error in the calling process; the VM carries on.
 #[rustler::nif]
