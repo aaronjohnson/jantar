@@ -7,6 +7,9 @@ if config_env() == :prod do
 
   if dir = System.get_env("JANTAR_FONT_DIR"), do: config(:jantar, font_dir: dir)
 
+  # systemd's StateDirectory=: history is saved there on shutdown.
+  if dir = System.get_env("STATE_DIRECTORY"), do: config(:jantar, state_dir: dir)
+
   # Theme: "dark" or "light" pins it; "file:/some/path" follows a file that
   # contains "dark" or "light" (checked every minute); unset asks gsettings.
   case env.("JANTAR_THEME", "") do

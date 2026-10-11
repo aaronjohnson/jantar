@@ -157,6 +157,8 @@ in
         Restart = "on-failure";
         RestartSec = 5;
         RuntimeDirectory = "jantar";
+        # History is saved here on stop and loaded on start (STATE_DIRECTORY).
+        StateDirectory = "jantar";
 
         # The tty becomes the service's controlling terminal, as with a
         # getty. The kernel lets a process set KDSETMODE on its own

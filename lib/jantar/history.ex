@@ -23,8 +23,17 @@ defmodule Jantar.History do
 
   `t_ms` is monotonic time in milliseconds (`System.monotonic_time/1`).
   Values are numbers, or `nil` for "no reading" (a gap).
+
+  With `config :jantar, state_dir:` set (the NixOS service sets it to its
+  StateDirectory), the samples are saved to `history.etf` there on shutdown
+  and loaded on start, so a restart or a rebuild doesn't empty the dials. It
+  writes only then, not as it goes. Monotonic time restarts with the VM, so
+  timestamps are saved as wall-clock time and converted back on load; the
+  time it was down shows as a gap, and samples past their window fall out
+  on the next push as usual.
   """
   use GenServer
+  require Logger
 
   @samples :jantar_samples
   @state :jantar_state
@@ -122,11 +131,19 @@ defmodule Jantar.History do
   # ------------------------------------------------------------------ server
 
   @impl true
-  def init(_opts) do
+  def init(opts) do
+    # So terminate/2 runs on shutdown, to save.
+    Process.flag(:trap_exit, true)
     :ets.new(@samples, [:ordered_set, :protected, :named_table, read_concurrency: true])
     :ets.new(@state, [:set, :protected, :named_table, read_concurrency: true])
-    {:ok, %{max_points: Application.get_env(:jantar, :max_points, 7200)}}
+    file = save_file(Keyword.get(opts, :state_dir, Application.get_env(:jantar, :state_dir)))
+    if file, do: load(file)
+    {:ok, %{max_points: Application.get_env(:jantar, :max_points, 7200), file: file}}
   end
+
+  @impl true
+  def terminate(_reason, %{file: file}) when is_binary(file), do: save(file)
+  def terminate(_reason, _state), do: :ok
 
   @impl true
   def handle_call({:declare, series, window_ms, max_points}, _from, state) do
@@ -170,5 +187,47 @@ defmodule Jantar.History do
   def handle_call({:put_sensor, name, status, current, t}, _from, state) do
     :ets.insert(@state, {{:sensor, name}, status, current, t})
     {:reply, :ok, state}
+  end
+
+  # ------------------------------------------------------------------ saving
+
+  @version 1
+
+  defp save_file(nil), do: nil
+  defp save_file(dir), do: Path.join(dir, "history.etf")
+
+  # Monotonic -> wall clock offset, to save timestamps that survive a restart.
+  defp wall_offset, do: System.system_time(:millisecond) - System.monotonic_time(:millisecond)
+
+  @doc false
+  def save(file) do
+    offset = wall_offset()
+    rings = :ets.match_object(@state, {{:ring, :_}, :_})
+    samples = for {key, t, v} <- :ets.tab2list(@samples), do: {key, t + offset, v}
+    data = :erlang.term_to_binary({@version, rings, samples}, [:compressed])
+    tmp = file <> ".tmp"
+
+    with :ok <- File.mkdir_p(Path.dirname(file)),
+         :ok <- File.write(tmp, data),
+         :ok <- File.rename(tmp, file) do
+      Logger.info("history: saved #{length(samples)} samples to #{file}")
+    else
+      {:error, reason} -> Logger.warning("history: couldn't save #{file}: #{inspect(reason)}")
+    end
+  end
+
+  defp load(file) do
+    with {:ok, data} <- File.read(file),
+         {@version, rings, samples} <- :erlang.binary_to_term(data, [:safe]) do
+      offset = wall_offset()
+      :ets.insert(@state, rings)
+      :ets.insert(@samples, for({key, wall, v} <- samples, do: {key, wall - offset, v}))
+      Logger.info("history: loaded #{length(samples)} samples from #{file}")
+    else
+      {:error, :enoent} -> :ok
+      other -> Logger.warning("history: ignoring #{file}: #{inspect(other, limit: 5)}")
+    end
+  rescue
+    e -> Logger.warning("history: ignoring #{file}: #{Exception.message(e)}")
   end
 end

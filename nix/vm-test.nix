@@ -68,6 +68,8 @@ pkgs.testers.runNixOSTest {
         machine.succeed("timeout 10 chvt 12")
         drawing()
         machine.succeed("systemctl stop jantar")
+        # History is saved on stop, for the next start.
+        machine.succeed("test -s /var/lib/jantar/history.etf")
         machine.succeed("timeout 10 chvt 1")
         machine.succeed("timeout 10 chvt 12")
         machine.fail("journalctl -u jantar | grep -q 'KDSETMODE text'")
