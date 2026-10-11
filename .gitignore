@@ -16,3 +16,4 @@ erl_crash.dump
 # Built renderers (Rustler and the cairo Port build into priv/)
 /priv/native/
 /priv/cairo_port
+/priv/npu_port

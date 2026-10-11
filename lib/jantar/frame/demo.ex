@@ -29,6 +29,10 @@ defmodule Jantar.Frame.Demo do
           if rem(div(t, 40_000), 3) == 0, do: 0.05 + noise(0.04), else: 0.0
         end),
       :wifi => series(1_800_000, 20_000, fn _t -> 58 + noise(5) end),
+      # An inference job for 40 s of every 120 s; the counters only run then.
+      {:npu, :dma} => series(300_000, 1000, fn t -> npu_job(t, 3.0e9) end),
+      {:npu, :riscv} => series(300_000, 1000, fn t -> npu_job(t, 1.9e7) end),
+      {:npu, :shave} => series(300_000, 1000, fn t -> npu_job(t, 7.3e3) end),
       {:gpu, "gt0-rc"} => series(300_000, 250, fn t -> busy(t, 0.02, 0.3) end),
       {:gpu, "gt1-mc"} => series(300_000, 250, fn t -> busy(t, 0.002, 0.02) end),
       # The link went down for a minute 19 minutes ago, after a roam.
@@ -85,6 +89,16 @@ defmodule Jantar.Frame.Demo do
       battery: %{status: "Charging", watts: 24.3, pct: 81, minutes: 38.0},
       charger: %{watts: 100.0, port: "/sys/class/power_supply/ucsi-source-psy-USBC000:002"},
       npu: %{load: 0.06, awake: true, mhz: 1400, max_mhz: 2050, mem_bytes: 68_714_496.0},
+      npu_counters: %{
+        streaming: true,
+        dma: 3.1e9,
+        dma0: 1.65e9,
+        dma1: 1.45e9,
+        riscv: 1.9e7,
+        shave: 7.3e3,
+        nce_mhz: 543,
+        dpu_mhz: 950
+      },
       gpu: %{
         driver: "xe",
         gts: [
@@ -174,9 +188,18 @@ defmodule Jantar.Frame.Demo do
 
   # A series sampled every `every` ms over `window` ms ending now, as History holds it.
   defp series(window, every, fun) do
-    samples = for age <- window..0//-every, do: {@now - age, fun.(window - age) / 1}
+    # nil is a gap (no reading).
+    samples =
+      for age <- window..0//-every,
+          do: {@now - age, with(v when is_number(v) <- fun.(window - age), do: v / 1)}
+
     %{samples: samples, window_ms: window}
   end
+
+  # Busy around `rate` for 40 s of every 120 s (ending at the newest sample),
+  # nil (not measured) the rest of the time.
+  defp npu_job(t, rate),
+    do: if(rem(t, 120_000) >= 80_000, do: rate * (0.8 + 0.4 * :rand.uniform()), else: nil)
 
   defp wave(t, period), do: (1 + :math.sin(2 * :math.pi() * t / period)) / 2
   defp noise(scale), do: (:rand.uniform() - 0.5) * 2 * scale

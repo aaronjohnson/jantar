@@ -124,6 +124,13 @@ defmodule Mix.Tasks.Jantar.Dump do
       "#{c.mhz} of #{c.max_mhz} MHz  mem #{Format.bytes(c.mem_bytes || 0)}"
   end
 
+  defp describe(:npu_counters, %{streaming: false}), do: "idle (not streaming)"
+
+  defp describe(:npu_counters, c) do
+    "dma #{Format.count(c.dma)}/s  riscv #{Format.count(c.riscv)}/s  " <>
+      "shave #{Format.count(c.shave)}/s  NCE #{c.nce_mhz} DPU #{c.dpu_mhz} MHz"
+  end
+
   defp describe(:gpu, c) do
     gts =
       for gt <- c.gts do

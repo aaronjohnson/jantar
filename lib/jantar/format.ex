@@ -17,6 +17,17 @@ defmodule Jantar.Format do
   def rate(b) when b >= 1024, do: "#{round(b / 1024)}K"
   def rate(b), do: "#{round(b)}B"
 
+  @doc "A count in SI units: 512, 7.3K, 12M, 3.1G (one decimal below 10 units)."
+  def count(nil), do: "…"
+
+  def count(n) do
+    case Enum.find([{"G", 1.0e9}, {"M", 1.0e6}, {"K", 1.0e3}], fn {_, u} -> n >= u end) do
+      {unit, u} when n < 10 * u -> float1(n / u) <> unit
+      {unit, u} -> "#{round(n / u)}#{unit}"
+      nil -> "#{round(n)}"
+    end
+  end
+
   import Bitwise, only: [<<<: 2]
   @units [{"T", 1 <<< 40}, {"G", 1 <<< 30}, {"M", 1 <<< 20}, {"K", 1 <<< 10}]
 

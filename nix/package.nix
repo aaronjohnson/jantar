@@ -1,6 +1,6 @@
-# jantar as an Elixir release: the Gleam core, the Rust NIF and the cairo
-# port are separate derivations (see jantar-core.nix, jantar-render.nix,
-# cairo-port.nix), handed to the Mix build through environment variables, so
+# jantar as an Elixir release: the Gleam core, the Rust NIF and the two C
+# ports are separate derivations (see jantar-core.nix, jantar-render.nix,
+# cairo-port.nix, npu-port.nix), handed to the Mix build through environment variables, so
 # no Gleam, cargo or make runs inside mixRelease.
 {
   lib,
@@ -17,6 +17,7 @@ let
   jantarCore = callPackage ./jantar-core.nix { inherit (beamPackages) erlang; };
   jantarRender = callPackage ./jantar-render.nix { };
   cairoPort = callPackage ./cairo-port.nix { };
+  npuPort = callPackage ./npu-port.nix { };
 
   src = lib.fileset.toSource {
     inherit root;
@@ -46,6 +47,7 @@ beamPackages.mixRelease {
     JANTAR_CORE_BUILD = "${jantarCore}";
     JANTAR_RENDER_NIF = "${jantarRender}/lib/libjantar_render.so";
     CAIRO_PORT_BIN = "${cairoPort}/bin/cairo_port";
+    NPU_PORT_BIN = "${npuPort}/bin/npu_port";
   };
 
   # Rustler loads priv/native/jantar_render.so; put the prebuilt one there.
@@ -60,7 +62,14 @@ beamPackages.mixRelease {
       --set-default JANTAR_FONT_DIR ${dejavu_fonts}/share/fonts/truetype
   '';
 
-  passthru = { inherit jantarCore jantarRender cairoPort; };
+  passthru = {
+    inherit
+      jantarCore
+      jantarRender
+      cairoPort
+      npuPort
+      ;
+  };
 
   meta = {
     description = "System dashboard for a Linux console, on the BEAM (Gleam + Elixir, Rust and C renderers)";

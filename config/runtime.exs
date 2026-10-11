@@ -21,6 +21,10 @@ if config_env() == :prod do
     config :jantar, usb_bays: map
   end
 
+  # The NPU's Level Zero counters (the module's npuCounters).
+  if env.("JANTAR_NPU_COUNTERS", "1") == "0",
+    do: config(:jantar, Jantar.Sensors.NpuCounters, enabled: false)
+
   # Theme: "dark" or "light" pins it; "file:/some/path" follows a file that
   # contains "dark" or "light" (checked every minute); unset asks gsettings.
   case env.("JANTAR_THEME", "") do

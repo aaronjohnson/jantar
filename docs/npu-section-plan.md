@@ -1,6 +1,20 @@
 # Plan: live NPU section
 
-Status (2026-10-10): researched and probed, nothing built yet. Next piece of work.
+Status (2026-10-10): built. `c/npu_port` (the Port), `Jantar.NpuPort`,
+`Jantar.Sensors.NpuCounters`, and the DMA dial in GPU · NPU. Found while
+building it:
+
+- Even `zeInit` and device enumeration wake the NPU, so the port initialises
+  nothing until OPEN. After CLOSE (context destroyed, the loader still
+  initialised, the process alive) the NPU suspends again within 0.5 s.
+- Streaming doesn't move `npu_busy_time_us`, so busy time is what says the
+  NPU is working: open when it moves, close at the first second it doesn't.
+- `NOC_timestamp` ticks at 19.2 MHz (10 reports at 100 ms = 19.2e6 ticks);
+  rates are timed with it. NOC counters restart at 0 with each streamer.
+- `Freq_dpu_hz` / `Freq_nce_hz` are kHz (950000 while sysfs said 950 MHz).
+
+Still to check on the real service: the NPU keeps suspending when idle with
+jantar running (watch `runtime_suspended_time` grow).
 
 ## What the hardware offers
 

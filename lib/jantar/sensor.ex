@@ -154,6 +154,11 @@ defmodule Jantar.Sensor do
     end
   end
 
+  # A source that owns a Port (the NPU counters) can be sent its exit status
+  # or a reply that came after a timeout; the source notices on its next
+  # request, so these are dropped.
+  def handle_info(_stray, state), do: {:noreply, state}
+
   @impl true
   def handle_call(:interval, _from, state), do: {:reply, state.interval, state}
 

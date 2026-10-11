@@ -39,6 +39,8 @@
           pkgs.gnumake
           pkgs.gcc
           pkgs.dejavu_fonts
+          # The NPU counters port (Level Zero).
+          pkgs.level-zero
         ];
 
         shellHook = ''

@@ -39,7 +39,8 @@ defmodule Jantar.Frame do
               {:event, :restart}
             ] ++
             [{:swap, :in}, {:swap, :out}, {:disk, :read}, {:disk, :write}] ++
-            for(d <- [:platform, :package, :cores, :graphics, :memory], do: {:rapl, d})
+            for(d <- [:platform, :package, :cores, :graphics, :memory], do: {:rapl, d}) ++
+            for(k <- [:dma, :riscv, :shave], do: {:npu, k})
 
   # Cutovers drawn as radial lines on the network dials.
   @network_events [{:event, :wifi}, {:event, :link}]
@@ -56,6 +57,7 @@ defmodule Jantar.Frame do
     :rapl,
     :ports,
     :npu,
+    :npu_counters,
     :gpu,
     :wifi,
     :link,
@@ -162,7 +164,7 @@ defmodule Jantar.Frame do
   @columns [
     [
       {"CPU", :yellow, ["CPU", "LOAD"]},
-      {"GPU · NPU", :orange, ["GPU", "NPU"]},
+      {"GPU · NPU", :orange, ["GPU", "NPU", "DMA"]},
       {"MEMORY · STORAGE", :violet, ["MEM", "SWAP", "DISK"]}
     ],
     [
@@ -373,6 +375,7 @@ defmodule Jantar.Frame do
             {if(s.npu.mem_bytes, do: "mem " <> Format.bytes(s.npu.mem_bytes), else: ""), :muted}
           ]
         ),
+      s[:npu_counters] && dma_panel(s.npu_counters, hist),
       s.gpu && gpu_panel(s.gpu, hist),
       s.cpu && s.cpu.clock_ghz &&
         dial(:cpu, "CLOCK", :yellow, [{:clock, 1, :yellow, :yellow}], hist,
@@ -481,6 +484,37 @@ defmodule Jantar.Frame do
       info: [
         {"MHz " <> mhz, :fg},
         {if(length(gts) > 1, do: "render orange, media violet", else: gpu.driver), :muted}
+      ]
+    )
+  end
+
+  # What the NPU moves while it works (Level Zero counters, read only while
+  # it is awake and busy): all DMA outermost, then the RISC-V control cores'
+  # and the SHAVE vector cores' cache traffic, on one log scale.
+  defp dma_panel(n, hist) do
+    series = [
+      {{:npu, :dma}, 1, :green, :green},
+      {{:npu, :riscv}, 1, :magenta, :magenta},
+      {{:npu, :shave}, 1, :cyan, :cyan}
+    ]
+
+    working = n.streaming and n.dma != nil
+
+    dial(:npu_counters, "DMA", :green, series, hist,
+      scale: {:log, 3.0, 10.0},
+      idle_floor: true,
+      guides: [1.0e6, 1.0e9],
+      centre: [
+        {if(working, do: Format.count(n.dma) <> "/s", else: "idle"),
+         if(working, do: :green, else: :muted), true},
+        {if(working, do: "riscv " <> Format.count(n.riscv), else: ""), :magenta, false}
+      ],
+      info: [
+        {if(n.streaming and n.nce_mhz,
+           do: "NCE #{n.nce_mhz}  DPU #{n.dpu_mhz} MHz",
+           else: "counted while working"
+         ), :fg},
+        {"green DMA, magenta RISC-V, cyan SHAVE", :muted}
       ]
     )
   end

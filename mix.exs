@@ -70,28 +70,36 @@ defmodule Mix.Tasks.Compile.JantarCore do
   end
 end
 
-defmodule Mix.Tasks.Compile.CairoPort do
+defmodule Mix.Tasks.Compile.CPorts do
   @moduledoc """
-  Builds the C renderer (c/cairo_port) with make, into the app's priv
-  directory, where `Jantar.Render.Cairo` starts it from. If `CAIRO_PORT_BIN`
-  is set (the Nix package builds it separately), that binary is copied
-  instead.
+  Builds the C programs run as Ports, with make, into the app's priv
+  directory: the renderer (c/cairo_port, started by `Jantar.Render.Cairo`)
+  and the NPU counters (c/npu_port, started by `Jantar.NpuPort`). If
+  `CAIRO_PORT_BIN` or `NPU_PORT_BIN` is set (the Nix package builds them
+  separately), that binary is copied instead.
   """
   use Mix.Task.Compiler
 
+  @ports [{"cairo_port", "CAIRO_PORT_BIN"}, {"npu_port", "NPU_PORT_BIN"}]
+
   @impl Mix.Task.Compiler
   def run(_args) do
-    out = Path.join(Mix.Project.app_path(), "priv/cairo_port")
-    File.mkdir_p!(Path.dirname(out))
+    results =
+      for {name, var} <- @ports do
+        out = Path.join(Mix.Project.app_path(), "priv/" <> name)
+        File.mkdir_p!(Path.dirname(out))
 
-    case System.get_env("CAIRO_PORT_BIN") do
-      nil -> make(out)
-      bin -> copy(bin, out)
-    end
+        case System.get_env(var) do
+          nil -> make(name, out)
+          bin -> copy(bin, out)
+        end
+      end
+
+    Enum.find(results, {:ok, []}, &match?({:error, _}, &1))
   end
 
-  defp make(out) do
-    case System.cmd("make", ["-s", "-C", "c/cairo_port", "OUT=#{out}"], stderr_to_stdout: true) do
+  defp make(name, out) do
+    case System.cmd("make", ["-s", "-C", "c/" <> name, "OUT=#{out}"], stderr_to_stdout: true) do
       {_, 0} ->
         {:ok, []}
 
@@ -118,9 +126,9 @@ defmodule Jantar.MixProject do
       version: "0.1.0",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
-      # Build the Gleam core and the C port first, then the usual compilers
+      # Build the Gleam core and the C ports first, then the usual compilers
       # (Rustler builds the NIF when Jantar.Render.Native is compiled).
-      compilers: [:jantar_core, :cairo_port | Mix.compilers()],
+      compilers: [:jantar_core, :c_ports | Mix.compilers()],
       deps: deps(),
       releases: [
         jantar: [

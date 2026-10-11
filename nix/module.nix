@@ -122,6 +122,17 @@ in
       '';
     };
 
+    npuCounters = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Let jantar open the Intel NPU (/dev/accel/accel0) to read its Level
+        Zero counters (DMA and cache traffic, clocks) while it is working. It
+        opens the device only while the NPU is already awake and busy, and
+        closes it when the work stops, so the NPU still suspends when idle.
+      '';
+    };
+
     extraGroups = mkOption {
       type = types.listOf types.str;
       default = [ ];
@@ -181,6 +192,7 @@ in
         JANTAR_THEME = if cfg.themeFile != null then "file:${cfg.themeFile}" else cfg.theme;
         JANTAR_MAX_FPS = toString cfg.maxFps;
         JANTAR_BATTERY_MAX_FPS = toString cfg.batteryMaxFps;
+        JANTAR_NPU_COUNTERS = if cfg.npuCounters then "1" else "0";
         JANTAR_USB_BAYS = lib.concatStringsSep "," (lib.mapAttrsToList (k: v: "${k}=${v}") cfg.usbBays);
         RELEASE_TMP = "/run/jantar";
         LANG = "C.UTF-8";
@@ -231,7 +243,8 @@ in
         DeviceAllow = [
           "${cfg.framebuffer} rw"
           "/dev/${tty} rw"
-        ];
+        ]
+        ++ lib.optional cfg.npuCounters "/dev/accel/accel0 rw";
         ProtectKernelTunables = true;
         ProtectKernelModules = true;
         ProtectKernelLogs = true;
