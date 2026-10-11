@@ -14,3 +14,15 @@
 
 ## File names are UTF-8 whatever the locale (a service may have none).
 +fnu
+
+## One scheduler of each kind, not one per core. jantar's work is a few small
+## samples a second and a 2-4 ms frame at most 4 times a second; with 16
+## schedulers, idle ones keep waking to look for work to steal, and there is
+## never enough to share. Measured over a minute with the dashboard hidden on
+## a 16-core machine (default 48 threads -> 9):
+##   default             770 ms CPU/min, 121 wakeups/s
+##   +S 2 (2 dirty each) 690 ms,         106/s
+##   +S 1 (1 dirty each) 640 ms,          83/s
++S 1:1
++SDcpu 1:1
++SDio 1
