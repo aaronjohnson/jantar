@@ -45,26 +45,28 @@ service.
   (retained `online` / Last Will `offline`, so a dead link shows immediately).
 - **Payload:** a batch of samples every 1–5 s, per-link interval, compressed with
   zstd (OTP 28 `:zstd`). Never `binary_to_term` on data from a machine I don't
-  control. Format: a columnar binary written and parsed with bit syntax:
-  version byte, base timestamp, u16 time deltas, then each sensor quantised to
-  an integer (CPU in 0.1 %, others in hundredths) and delta-encoded as int16.
-  Parsing is a pattern match, so a malformed payload is just a failed match.
-  Zero dependencies; the MQTT 5 content-type property carries the version.
-  Protobuf (packed `sint32` deltas, same layout) is the swap if a non-BEAM
-  consumer ever appears; it would land at about the same size.
+  control. Format: columnar, each sensor quantised to an integer (CPU in 0.1 %,
+  others in hundredths) and delta-encoded, laid out as **protobuf wire format**:
+  base timestamp, then one packed `repeated sint32` field per column (zigzag
+  varints, so small deltas take one byte). A `.proto` file documents it, so any
+  language can decode it; on the BEAM it is written and parsed with bit syntax
+  (~20 lines, zero dependencies), or with the `protobuf` Hex package if that is
+  simpler. The MQTT 5 content-type property carries the schema version.
 
   Measured, one minute = 240 samples of 16 CPU cores + 10 sensors (random-walk
   data, so real, flatter readings compress better):
 
-  | format                    |    raw |  zstd |
-  |---------------------------|-------:|------:|
-  | JSON, row per sample      | 60 KB  | 16 KB |
-  | Erlang term, rows         | 77 KB  | 19 KB |
-  | JSON, columnar            | 40 KB  | 12 KB |
-  | float32 columns           | 25 KB  | 15 KB |
-  | quantised + delta int16   | 13 KB  |  7 KB |
+  | format                    |    raw |   zstd |
+  |---------------------------|-------:|-------:|
+  | JSON, row per sample      | 60 KB  | 16 KB  |
+  | Erlang term, rows         | 77 KB  | 19 KB  |
+  | JSON, columnar            | 40 KB  | 12 KB  |
+  | float32 columns           | 25 KB  | 15 KB  |
+  | quantised + delta, int16  | 13 KB  |  7 KB  |
+  | protobuf, packed sint32   |  7 KB  | 5.4 KB |
 
-  Raw floats compress badly (noisy mantissa bits); quantising is what wins.
+  Raw floats compress badly (noisy mantissa bits); quantising is what wins, and
+  varints beat fixed int16 because most deltas are tiny. zstd takes ~20 µs a batch.
 - **High latency / outages:** QoS 1, persistent sessions (`clean_start false`,
   session expiry of hours) so the broker queues while the viewer sleeps;
   MQTT 5 message expiry so stale batches don't pile up forever. Gaps longer than
