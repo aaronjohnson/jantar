@@ -444,7 +444,7 @@ pub fn wifi(text: String) -> Wifi {
 
 /// The default route from /proc/net/route: its interface and gateway as a
 /// dotted IPv4 address. The kernel writes addresses as little-endian hex
-/// ("0158A8C0" is 192.168.88.1). Error when there is no default route,
+/// ("010200C0" is 192.0.2.1). Error when there is no default route,
 /// e.g. after a DHCP lease is lost.
 pub fn default_route(text: String) -> Result(#(String, String), Nil) {
   text

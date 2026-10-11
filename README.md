@@ -2,9 +2,9 @@
 
 A polar-dial system dashboard for the Linux text console, written for the
 BEAM. Switch to its console (Ctrl+Alt+F12) and the whole machine is on one
-screen: per-core CPU, temperature, power, network, memory, NPU, GPU, clocks,
-fans, Wi-Fi, load and the CI runner. Each dial shows how its sensor has moved
-over the last few minutes, not just its current value.
+screen: CPU cores, thermals, power, the NPU and GPU, memory, storage and the
+network, with a CI build's progress in the footer. Each dial shows how its
+sensor has moved over the last few minutes, not just its current value.
 
 ![jantar, Solarized dark](docs/screenshots/dark.png)
 
@@ -14,37 +14,24 @@ instruments for following the sun and moon.
 
 ## Reading the dials
 
-Time runs clockwise from the top, one lap per period (e.g. 6 laps of 5 min),
-and the distance from the centre is the value. The newest sample is the
-bright dot at the top; older laps fade. A busy series (sampled every 250 ms)
-is drawn as a trace with a band from its minimum to its maximum; a slow one
-(Wi-Fi every 20 s) keeps its dots. The CPU dial is rings of cores by tier
-(performance, efficient, low-power), and the footer follows a CI build with
-its progress and ETA.
-
-![close-ups: CPU cores, GPU render and media, clocks, load](docs/screenshots/dials.png)
+Time runs clockwise from the top, one lap per period, and the distance from
+the centre is the value. The newest sample is the bright dot at the top;
+older laps fade. Busy series are drawn as a trace with a min-max band,
+slow ones as dots. Radial lines mark Wi-Fi roams, link drops and restarts.
 
 ## Keys
 
-On the dashboard's console:
-
 | key | overview | zoomed in |
 | --- | --- | --- |
-| `1` `2` `3` | live, the last day, the last 30 days | the last 1, 5, 30 minutes, as one lap |
-| `c` `t` `g` `p` `m` `n` | zoom in on CPU, thermals, GPU · NPU, power, memory · storage, network (screen order: left to right, top to bottom) | switch to that section (its own letter goes back) |
-| `Esc` `0` `q` | | back to the overview, as it was |
+| `c` `t` `g` `p` `m` `n` | zoom in on a section, in screen order | switch section |
+| `1` `2` `3` | live, last day, last 30 days | last 1, 5, 30 minutes |
+| `Esc` | | back to the overview |
 
-Zoomed in, one section fills the screen with larger dials. A window longer
-than a series keeps its samples (network traffic keeps 5 minutes) comes from
-the per-minute archive instead.
+![the GPU · NPU section, zoomed in](docs/screenshots/zoom.png)
 
-It follows Solarized light or dark:
+It follows Solarized light or dark, and shows whatever sensors a machine has.
 
-![jantar, Solarized light](docs/screenshots/light.png)
-
-and fits whatever sensors a machine has. In a VM with six of them:
-
-<img src="docs/screenshots/vm.png" alt="jantar in a VM with six sensors" width="640">
+<img src="docs/screenshots/light.png" alt="jantar, Solarized light" width="640">
 
 ## Running it on NixOS
 
@@ -70,9 +57,10 @@ jantar.nixosModules.default
 }
 ```
 
-It runs as its own user with access to just the framebuffer and its console,
-no network and no capabilities. Other options: `framebuffer`, `maxFps` (4)
-and `batteryMaxFps` (2).
+It runs as its own user with access to just the framebuffer, its console and
+the NPU, no network and no capabilities. Other options include `powercap`
+(RAPL power breakdown), `usbBays` (which USB-C port is which) and `maxFps`;
+see [nix/module.nix](nix/module.nix).
 
 It needs a framebuffer console (`/dev/fb0`, from simpledrm or your GPU
 driver's fbdev emulation) and expects 32-bit XRGB pixels. It was built on a
@@ -120,8 +108,9 @@ original.
 
 ## Status
 
-* Done: sensors and history; both renderers; the Nix package, NixOS service
-  and VM test.
+* Done: sensors and history, including the Intel NPU's Level Zero counters;
+  both renderers; zooming into a section; the Nix package, NixOS service and
+  VM test.
 * Next: a fleet view, watching several machines over MQTT
   ([plan](docs/milestone-5-fleet.md)).
 

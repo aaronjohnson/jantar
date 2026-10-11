@@ -3,19 +3,19 @@ import jantar_core/parse.{Connected, Disconnected, OtherEvent}
 
 const route =
   "Iface\tDestination\tGateway \tFlags\tRefCnt\tUse\tMetric\tMask\t\tMTU\tWindow\tIRTT
-wlp0s20f3\t0058A8C0\t00000000\t0001\t0\t0\t600\t00FFFFFF\t0\t0\t0
-wlp0s20f3\t00000000\t0158A8C0\t0003\t0\t0\t600\t00000000\t0\t0\t0
+wlp0s20f3\t000200C0\t00000000\t0001\t0\t0\t600\t00FFFFFF\t0\t0\t0
+wlp0s20f3\t00000000\t010200C0\t0003\t0\t0\t600\t00000000\t0\t0\t0
 "
 
 const arp =
   "IP address       HW type     Flags       HW address            Mask     Device
-192.168.88.9     0x1         0x2         aa:bb:cc:dd:ee:01     *        wlp0s20f3
-192.168.88.1     0x1         0x2         aa:bb:cc:dd:ee:02     *        wlp0s20f3
-192.168.88.7     0x1         0x0         00:00:00:00:00:00     *        wlp0s20f3
+192.0.2.9     0x1         0x2         00:00:5e:00:53:21     *        wlp0s20f3
+192.0.2.1     0x1         0x2         00:00:5e:00:53:22     *        wlp0s20f3
+192.0.2.7     0x1         0x0         00:00:00:00:00:00     *        wlp0s20f3
 "
 
 pub fn default_route_test() {
-  parse.default_route(route) |> should.equal(Ok(#("wlp0s20f3", "192.168.88.1")))
+  parse.default_route(route) |> should.equal(Ok(#("wlp0s20f3", "192.0.2.1")))
 }
 
 pub fn no_default_route_test() {
@@ -23,10 +23,10 @@ pub fn no_default_route_test() {
 }
 
 pub fn arp_test() {
-  parse.arp_reachable(arp, "192.168.88.1") |> should.be_true
+  parse.arp_reachable(arp, "192.0.2.1") |> should.be_true
   // Flags 0x0: an incomplete entry, it never answered.
-  parse.arp_reachable(arp, "192.168.88.7") |> should.be_false
-  parse.arp_reachable(arp, "10.0.0.1") |> should.be_false
+  parse.arp_reachable(arp, "192.0.2.7") |> should.be_false
+  parse.arp_reachable(arp, "198.51.100.1") |> should.be_false
 }
 
 pub fn iw_event_test() {

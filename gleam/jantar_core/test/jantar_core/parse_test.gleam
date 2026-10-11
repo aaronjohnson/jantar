@@ -140,7 +140,7 @@ pub fn nmcli_test() {
 pub fn iw_single_link_test() {
   let text =
     "Interface wlan0\n\tchannel 36 (5180 MHz), width: 80 MHz, center1: 5210 MHz\n"
-    <> "Connected to 02:00:00:00:00:01 (on wlan0)\n\tfreq: 5180\n"
+    <> "Connected to 00:00:5e:00:53:01 (on wlan0)\n\tfreq: 5180\n"
     <> "\tsignal: -61 dBm\n\ttx bitrate: 866.7 MBit/s VHT-MCS 9\n"
   // No "Link N" lines: a plain link 0, active because it is the only one.
   assert parse.iw(text) == #([Link(0, 5180, True)], 80, -61, 866.7)

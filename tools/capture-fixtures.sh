@@ -18,9 +18,9 @@ copy() {                     # copy each readable file to $dst/<its absolute pat
   done
 }
 
-anonymise() {                # MACs -> 02:00:00:00:00:NN, SSIDs -> Network-N
+anonymise() {                # MACs -> 00:00:5e:00:53:NN (RFC 9542), SSIDs -> Network-N
   awk '
-    function mac(m) { if (!(m in macs)) macs[m] = sprintf("02:00:00:00:00:%02x", ++nm); return macs[m] }
+    function mac(m) { if (!(m in macs)) macs[m] = sprintf("00:00:5e:00:53:%02x", ++nm); return macs[m] }
     function net(s) { if (!(s in nets)) nets[s] = "Network-" (++nn); return nets[s] }
     {
       out = ""; rest = $0          # scan left to right so a replaced MAC is never rescanned

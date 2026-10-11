@@ -53,7 +53,7 @@
 Interface wlp0s20f3
 	ifindex 2
 	wdev 0x1
-	addr 02:00:00:00:00:01
+	addr 00:00:5e:00:53:01
 	ssid Network-4
 	type managed
 	wiphy 0
@@ -61,18 +61,18 @@ Interface wlp0s20f3
 		qsz-byt	qsz-pkt	flows	drops	marks	overlmt	hashcol	tx-bytes	tx-packets
 		0	0	0	0	0	0	0	0		0
 	MLD with links:
-	 - link ID  1 link addr 02:00:00:00:00:02
+	 - link ID  1 link addr 00:00:5e:00:53:02
 	   txpower 22.00 dBm
-	 - link ID  2 link addr 02:00:00:00:00:03
+	 - link ID  2 link addr 00:00:5e:00:53:03
 	   channel 85 (6375 MHz), width: 320 MHz, center1: 6265 MHz
 	   txpower 22.00 dBm
-Connected to 02:00:00:00:00:04 (on wlp0s20f3)
+Connected to 00:00:5e:00:53:04 (on wlp0s20f3)
 	SSID: Network-4
-	Link 1 BSSID 02:00:00:00:00:05
+	Link 1 BSSID 00:00:5e:00:53:05
 		freq: 5180.0
-	Link 2 BSSID 02:00:00:00:00:06
+	Link 2 BSSID 00:00:5e:00:53:06
 		freq: 6375.0
-MLD 02:00:00:00:00:04 stats:
+MLD 00:00:5e:00:53:04 stats:
 	RX: 466279411 bytes (336185 packets)
 	TX: 108505886 bytes (46394 packets)
 	signal: -57 dBm

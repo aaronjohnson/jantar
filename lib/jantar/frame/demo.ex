@@ -117,7 +117,7 @@ defmodule Jantar.Frame.Demo do
         bitrate_mbit: 1152.9,
         links: [%{id: 1, freq_mhz: 5180, active: false}, %{id: 2, freq_mhz: 6375, active: true}]
       },
-      link: %{route: true, gateway: true, iface: "wlan0", gateway_ip: "192.168.1.1", ipv6: false},
+      link: %{route: true, gateway: true, iface: "wlan0", gateway_ip: "192.0.2.1", ipv6: false},
       ports: %{
         ports: [
           %{
@@ -164,7 +164,7 @@ defmodule Jantar.Frame.Demo do
         temp_c: 41.0,
         top: {"nix-daemon", 3.1e5}
       },
-      wifi_events: %{iface: "wlan0", bssid: "02:00:00:00:00:04"},
+      wifi_events: %{iface: "wlan0", bssid: "00:00:5e:00:53:04"},
       ci_runner: %{
         installed: true,
         active: true,
