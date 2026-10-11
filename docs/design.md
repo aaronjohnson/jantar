@@ -42,7 +42,7 @@ jantar/
 │   │   ├── sysfs.ex           file reads under a configurable root; realpath
 │   │   └── format.ex          hud's number formatting
 │   └── mix/tasks/             jantar.dump, jantar.png, jantar.fb
-├── native/jantar_render/         Rust NIF: tiny-skia + fontdue + memmap2 (Rustler)
+├── native/jantar_render/         Rust NIF: tiny-skia + fontdue (Rustler)
 ├── c/cairo_port/              C Port: cairo + FreeType
 ├── docs/                      design notes, screenshots, milestone 5 plan
 ├── test/                      ExUnit tests; fixtures/capture = recorded /proc and /sys
@@ -204,16 +204,25 @@ decoding.
 
 * **Rust** (`native/jantar_render`, `Jantar.Render.Rust`): a Rustler NIF.
   Drawing runs on a **dirty CPU scheduler**, so a 10-30 ms frame never blocks
-  the normal schedulers. Fonts and the mapped framebuffer are NIF resources.
+  the normal schedulers. Fonts and the open framebuffer are NIF resources.
 * **cairo** (`c/cairo_port`, `Jantar.Render.Cairo`): a separate OS process
   speaking `{:packet, 4}` on stdin/stdout. cairo's RGB24 is the framebuffer's
   XRGB8888, so it draws into framebuffer-layout memory with
   `cairo_image_surface_create_for_data`. By default that is an offscreen buffer
   with the framebuffer's stride, and only the 16-row bands that changed are
-  copied into the mmapped framebuffer: drawing straight into the visible
-  framebuffer shows each half-drawn frame (flicker). `config :jantar,
-  cairo_direct: true` draws directly into the mapping instead, for comparison.
-  The Rust backend writes changed bands the same way.
+  written to the framebuffer. `config :jantar, cairo_direct: true` draws
+  straight into a memory mapping of it instead, for comparison: each
+  half-drawn frame shows (flicker), and see below. The Rust backend writes
+  changed bands the same way.
+
+**Write, don't map.** Both backends write bands with `pwrite()` on
+`/dev/fb0`, as the Python hud does, not into an `mmap` of it. A write goes
+through the DRM driver's fbdev emulation, which marks that part of the screen
+damaged and flushes it. Stores into a mapping reach the memory without the
+driver knowing, and on Intel graphics with panel self refresh (PSR) the panel
+then keeps showing whatever it last fetched: the first frame, frozen. It
+worked in tests on a stand-in file and in the VM (no PSR) and froze on the
+laptop.
 
 **Adaptive display**: a series with more samples per lap than there is room
 for dots (`polar.dense`, about one dot per 3 units of arc) is drawn as a
@@ -293,8 +302,8 @@ Building the display list on the BEAM takes 2-4 ms per frame in steady
 state. Running the display for 20 s at 4 fps into a 2880x1920 stand-in
 framebuffer with live data: Rust 29 ms per frame (draw plus conversion to
 XRGB plus band compare), BEAM RSS 184 MB; cairo 9 ms per frame, BEAM RSS
-123 MB plus 73 MB for `cairo_port` (three full-screen buffers: mapping,
-back buffer and previous frame). tiny-skia draws into RGBA and needs a
+123 MB plus 73 MB for `cairo_port` (full-screen buffers for the back
+buffer and the previous frame; measured when it still mapped the framebuffer too). tiny-skia draws into RGBA and needs a
 conversion pass to XRGB; cairo draws in the framebuffer's format directly.
 
 ### When native code fails

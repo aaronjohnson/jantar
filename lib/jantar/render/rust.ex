@@ -1,7 +1,7 @@
 defmodule Jantar.Render.Rust do
   @moduledoc """
   The Rust backend: a process holding the NIF's resources (fonts and the
-  mapped framebuffer). The drawing itself runs on a dirty CPU scheduler,
+  open framebuffer). The drawing itself runs on a dirty CPU scheduler,
   called from this process.
 
   A Rust panic is caught by Rustler and arrives here as an exception; but a

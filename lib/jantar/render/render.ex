@@ -30,7 +30,7 @@ defmodule Jantar.Render do
   def open_fb(server, path, width, height, stride),
     do: GenServer.call(server, {:open_fb, path, width, height, stride}, 30_000)
 
-  @doc "Draw into the mapped framebuffer; returns µs and the number of 16-row bands written."
+  @doc "Draw into the framebuffer; returns µs and the number of 16-row bands written."
   def fb(server, list), do: GenServer.call(server, {:fb, list}, 30_000)
 
   @doc "Write the whole screen next time (after a VT switch)."

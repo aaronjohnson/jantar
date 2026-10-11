@@ -1,10 +1,12 @@
-//! The framebuffer (or a file standing in for it): memory-mapped, written as
-//! XRGB8888 (bytes B, G, R, X), and only in bands of rows that changed since
-//! the last frame, like hud's Framebuffer.show(). Plus KDSETMODE, which tells
-//! the console to stop drawing its text over us.
+//! The framebuffer (or a file standing in for it), written as XRGB8888
+//! (bytes B, G, R, X), and only in bands of rows that changed since the last
+//! frame, like hud's Framebuffer.show(). Bands are written with pwrite(), not
+//! through a memory mapping: writing through the device tells the DRM driver
+//! what changed, and with panel self refresh (Intel PSR) the panel otherwise
+//! keeps showing the first frame. Plus KDSETMODE and the VT ioctls.
 
-use memmap2::MmapMut;
-use std::fs::OpenOptions;
+use std::fs::{File, OpenOptions};
+use std::os::unix::fs::FileExt;
 use std::os::unix::io::AsRawFd;
 use tiny_skia::Pixmap;
 
@@ -12,7 +14,7 @@ use tiny_skia::Pixmap;
 const BAND_ROWS: usize = 16;
 
 pub struct Fb {
-    map: MmapMut,
+    file: File,
     pub width: u32,
     pub height: u32,
     stride: usize,
@@ -27,11 +29,11 @@ impl Fb {
         if stride < width * 4 {
             return Err(format!("stride {} is less than {} pixels x 4 bytes", stride, width));
         }
-        // SAFETY: the mapping is only accessed through this struct, and we
-        // write within its length. Another process could write the same
-        // memory (the console), which is why we ask for KD_GRAPHICS first.
-        let map = unsafe { memmap2::MmapOptions::new().len(len).map_mut(&file) }.map_err(|e| format!("mmap {}: {}", path, e))?;
-        Ok(Fb { map, width, height, stride: stride as usize, prev: None })
+        let size = file.metadata().map_err(|e| format!("{}: {}", path, e))?.len() as usize;
+        if size != 0 && size < len {
+            return Err(format!("{}: {} bytes, smaller than {} rows of {}", path, size, height, stride));
+        }
+        Ok(Fb { file, width, height, stride: stride as usize, prev: None })
     }
 
     /// Forget the previous frame, so the next one is written in full (after
@@ -65,7 +67,11 @@ impl Fb {
                 None => true,
             };
             if changed {
-                self.map[off..end].copy_from_slice(&frame[off..end]);
+                // A failed write leaves this band to be retried next frame.
+                if self.file.write_all_at(&frame[off..end], off as u64).is_err() {
+                    self.prev = None;
+                    return written;
+                }
                 written += 1;
             }
         }

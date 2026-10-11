@@ -137,7 +137,8 @@ static FT_Library ft;
 static cairo_font_face_t *face_regular, *face_bold;
 
 static struct {
-    uint8_t *map;   /* the mmapped framebuffer (or stand-in file) */
+    int fd;         /* the framebuffer (or stand-in file); -1 when closed */
+    uint8_t *map;   /* its mapping, in direct mode only */
     uint8_t *back;  /* offscreen frame in the same layout */
     uint8_t *prev;  /* last frame written, for the changed-band check */
     int width, height, stride, direct, valid;
@@ -351,6 +352,7 @@ static void cmd_png(reader *r) {
 
 static void close_fb(void) {
     if (fb.map) munmap(fb.map, fb.len);
+    if (fb.fd > 0) close(fb.fd);
     free(fb.back);
     free(fb.prev);
     memset(&fb, 0, sizeof fb);
@@ -365,9 +367,11 @@ static void cmd_open_fb(reader *r) {
     int fd = open(path, O_RDWR);
     if (fd < 0) { reply_error("%s: %s", path, strerror(errno)); free(path); return; }
     fb.len = (size_t)stride * (size_t)h;
-    fb.map = mmap(NULL, fb.len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    close(fd); /* the mapping stays valid */
-    if (fb.map == MAP_FAILED) { fb.map = NULL; reply_error("mmap %s: %s", path, strerror(errno)); free(path); return; }
+    fb.fd = fd;
+    if (direct) {
+        fb.map = mmap(NULL, fb.len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        if (fb.map == MAP_FAILED) { fb.map = NULL; close_fb(); reply_error("mmap %s: %s", path, strerror(errno)); free(path); return; }
+    }
     fb.width = w, fb.height = h, fb.stride = stride, fb.direct = direct;
     fb.back = calloc(1, fb.len);
     fb.prev = calloc(1, fb.len);
@@ -379,14 +383,18 @@ static void cmd_open_fb(reader *r) {
  * FB: cairo's RGB24 format is XRGB8888 in native byte order, exactly the
  * framebuffer's layout, so cairo draws straight into framebuffer-format
  * memory with no conversion:
- *  - direct: the surface IS the mmapped framebuffer (fewest copies, but the
- *    half-drawn frame is visible for a moment: flicker);
  *  - default: the surface is an offscreen buffer with the same stride, and
- *    only 16-row bands that changed are copied to the framebuffer.
+ *    only 16-row bands that changed are written to the framebuffer with
+ *    pwrite(). Writing through the device, not a mapping, tells the DRM
+ *    driver what changed: with panel self refresh (Intel PSR) the panel
+ *    otherwise keeps showing the first frame.
+ *  - direct: the surface IS the mmapped framebuffer (fewest copies, but
+ *    the half-drawn frame shows for a moment, and the driver never hears
+ *    of the change, so with PSR the screen may not update). Comparison only.
  */
 static void cmd_fb(reader *r) {
     int w, h;
-    if (!fb.map) return reply_error("no framebuffer open");
+    if (fb.fd <= 0) return reply_error("no framebuffer open");
     if (header(r, &w, &h)) return reply_error("bad display list");
     if (w > fb.width) w = fb.width;
     if (h > fb.height) h = fb.height;
@@ -403,7 +411,8 @@ static void cmd_fb(reader *r) {
         for (size_t off = 0; off < len; off += band) {
             size_t n = off + band > len ? len - off : band;
             if (!fb.valid || memcmp(fb.prev + off, fb.back + off, n)) {
-                memcpy(fb.map + off, fb.back + off, n);
+                if (pwrite(fb.fd, fb.back + off, n, (off_t)off) != (ssize_t)n)
+                    return reply_error("writing the framebuffer: %s", strerror(errno));
                 memcpy(fb.prev + off, fb.back + off, n);
                 bands++;
             }
