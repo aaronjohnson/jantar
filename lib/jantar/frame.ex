@@ -37,7 +37,9 @@ defmodule Jantar.Frame do
               {:event, :wifi},
               {:event, :link},
               {:event, :restart}
-            ] ++ [{:swap, :in}, {:swap, :out}, {:disk, :read}, {:disk, :write}]
+            ] ++
+            [{:swap, :in}, {:swap, :out}, {:disk, :read}, {:disk, :write}] ++
+            for(d <- [:platform, :package, :cores, :graphics, :memory], do: {:rapl, d})
 
   # Cutovers drawn as radial lines on the network dials.
   @network_events [{:event, :wifi}, {:event, :link}]
@@ -51,6 +53,7 @@ defmodule Jantar.Frame do
     :fan,
     :battery,
     :charger,
+    :rapl,
     :npu,
     :gpu,
     :wifi,
@@ -163,7 +166,7 @@ defmodule Jantar.Frame do
     ],
     [
       {"THERMALS", :red, ["TEMP", "CLOCK", "FAN"]},
-      {"POWER", :green, ["POWER"]},
+      {"POWER", :green, ["POWER", "CHIP"]},
       {"NETWORK", :blue, ["WIFI", "NET", "LINK"]}
     ]
   ]
@@ -396,6 +399,7 @@ defmodule Jantar.Frame do
         ),
       s.wifi && s.wifi.ok != false && wifi_panel(s.wifi, hist),
       s[:link] && link_panel(s[:link], s[:wifi_events], hist),
+      s[:rapl] && map_size(s.rapl) > 0 && chip_panel(s.rapl, hist),
       s.cpu &&
         dial(:cpu, "LOAD", :yellow, [{:cpu, 1, :yellow, :yellow}], hist,
           guides: [0.5, 0.75],
@@ -496,6 +500,36 @@ defmodule Jantar.Frame do
            do: String.trim("#{links} #{w.width_mhz}MHz #{trunc(w.bitrate_mbit)}Mb"),
            else: ""
          ), :muted}
+      ]
+    )
+  end
+
+  # Where the power goes, from RAPL: the whole platform outermost in the
+  # scale's sense (it's the largest), the package within it, and the cores,
+  # graphics and memory within that.
+  @chip [
+    platform: {:green, "platform"},
+    package: {:orange, "package"},
+    cores: {:yellow, "cores"},
+    graphics: {:magenta, "graphics"},
+    memory: {:violet, "memory"}
+  ]
+
+  defp chip_panel(r, hist) do
+    series = for {d, {tint, _}} <- @chip, Map.has_key?(r, d), do: {{:rapl, d}, 1, tint, tint}
+    watts = fn d -> if r[d], do: "#{Float.round(r[d] / 1, 1)}", else: "–" end
+    {big, big_tint} = if r[:platform], do: {:platform, :green}, else: {:package, :orange}
+
+    dial(:rapl, "CHIP", :green, series, hist,
+      scale: {:log, -1.0, 2.0},
+      guides: [1.0, 10.0],
+      centre: [
+        {watts.(big) <> " W", big_tint, true},
+        {"package " <> watts.(:package), :orange, false}
+      ],
+      info: [
+        {"cores #{watts.(:cores)}  gfx #{watts.(:graphics)}  mem #{watts.(:memory)} W", :fg},
+        {"green platform, orange package", :muted}
       ]
     )
   end

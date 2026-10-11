@@ -13,6 +13,16 @@ let
   cfg = config.services.jantar;
   tty = "tty${toString cfg.tty}";
   inherit (lib) mkOption mkEnableOption types;
+
+  # Group read access to the RAPL energy counters (udev at boot, and again
+  # on every start, since a switch doesn't re-run udev).
+  powercapAccess = pkgs.writeShellScript "jantar-powercap" ''
+    for f in /sys/class/powercap/intel-rapl:*/energy_uj; do
+      [ -e "$f" ] || continue
+      ${pkgs.coreutils}/bin/chgrp jantar "$f"
+      ${pkgs.coreutils}/bin/chmod g+r "$f"
+    done
+  '';
 in
 {
   options.services.jantar = {
@@ -86,6 +96,18 @@ in
       description = "Frame rate cap on battery.";
     };
 
+    powercap = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Let jantar read Intel RAPL energy counters
+        (/sys/class/powercap/intel-rapl:*/energy_uj) to show where power goes:
+        platform, CPU package, cores, graphics, memory. The kernel makes them
+        root-only because fine-grained power readings can leak secrets (the
+        "Platypus" attack); this gives the jantar group read access to them.
+      '';
+    };
+
     extraGroups = mkOption {
       type = types.listOf types.str;
       default = [ ];
@@ -110,9 +132,13 @@ in
 
     # The dashboard's tty belongs to the service user (as a login's tty
     # belongs to whoever logs in), so it can open it to set KD_GRAPHICS.
-    services.udev.extraRules = ''
-      SUBSYSTEM=="tty", KERNEL=="${tty}", OWNER="jantar", MODE="0600"
-    '';
+    services.udev.extraRules =
+      ''
+        SUBSYSTEM=="tty", KERNEL=="${tty}", OWNER="jantar", MODE="0600"
+      ''
+      + lib.optionalString cfg.powercap ''
+        SUBSYSTEM=="powercap", KERNEL=="intel-rapl:*", RUN+="${powercapAccess}"
+      '';
 
     systemd.services.jantar = {
       description = "jantar dashboard on ${tty}";
@@ -151,7 +177,10 @@ in
         ExecStart = "${cfg.package}/bin/jantar start";
         # The udev rule only applies when the tty device is (re)added, i.e.
         # at boot; also hand it over now, so the first switch works.
-        ExecStartPre = "+${pkgs.coreutils}/bin/chown jantar /dev/${tty}";
+        ExecStartPre = [
+          "+${pkgs.coreutils}/bin/chown jantar /dev/${tty}"
+        ]
+        ++ lib.optional cfg.powercap "+${powercapAccess}";
         # Whatever happened (stop, crash, kill), give the VT back its text.
         ExecStopPost = "+${cfg.package.passthru.cairoPort}/bin/cairo_port --kd-mode text /dev/${tty}";
         Restart = "on-failure";

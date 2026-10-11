@@ -4,6 +4,7 @@
 
 import gleam/list
 import gleam/option.{None, Some}
+import gleeunit/should
 import jantar_core/fixture
 import jantar_core/parse.{Progress}
 import jantar_core/rate
@@ -141,4 +142,14 @@ pub fn eta_test() {
 pub fn mean_test() {
   assert rate.mean([]) == Error(Nil)
   assert rate.mean([1.0, 2.0, 6.0]) == Ok(3.0)
+}
+
+pub fn energy_watts_test() {
+  // 5 J over 1 s is 5 W.
+  rate.energy_watts(1_000_000, 6_000_000, 262_143_328_850, 1000)
+  |> should.equal(Ok(5.0))
+  // The counter wrapped: 1 J before the top, 2 J after it, over 500 ms.
+  rate.energy_watts(262_142_328_850, 2_000_000, 262_143_328_850, 500)
+  |> should.equal(Ok(6.0))
+  rate.energy_watts(1, 2, 10, 0) |> should.equal(Error(Nil))
 }

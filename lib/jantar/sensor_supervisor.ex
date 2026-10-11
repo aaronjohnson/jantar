@@ -19,6 +19,7 @@ defmodule Jantar.SensorSupervisor do
     Jantar.Sensors.Fan,
     Jantar.Sensors.Battery,
     Jantar.Sensors.Charger,
+    Jantar.Sensors.Rapl,
     Jantar.Sensors.Npu,
     Jantar.Sensors.Gpu,
     Jantar.Sensors.Wifi,

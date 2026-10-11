@@ -174,3 +174,25 @@ pub fn mean(values: List(Float)) -> Result(Float, Nil) {
     _ -> Ok(float.sum(values) /. int.to_float(list.length(values)))
   }
 }
+
+/// Watts from two readings of a RAPL energy counter (µJ, from
+/// /sys/class/powercap/*/energy_uj) `dt_ms` apart. The counter wraps at
+/// `max_uj` (max_energy_range_uj), so a smaller second reading means it
+/// went round once.
+pub fn energy_watts(
+  prev_uj: Int,
+  cur_uj: Int,
+  max_uj: Int,
+  dt_ms: Int,
+) -> Result(Float, Nil) {
+  case dt_ms > 0 {
+    False -> Error(Nil)
+    True -> {
+      let delta = case cur_uj >= prev_uj {
+        True -> cur_uj - prev_uj
+        False -> cur_uj + max_uj - prev_uj
+      }
+      Ok(int.to_float(delta) /. int.to_float(dt_ms) /. 1000.0)
+    }
+  }
+}

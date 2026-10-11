@@ -43,6 +43,15 @@ defmodule Jantar.Frame.Demo do
         end),
       {:disk, :read} => series(300_000, 1000, fn t -> burst(t, 2.0e4, 6.0e7) end),
       {:disk, :write} => series(300_000, 1000, fn t -> burst(t, 5.0e4, 2.0e7) end),
+      {:rapl, :platform} =>
+        series(1_800_000, 1000, fn t -> 6 + 9 * wave(t, 400_000) + noise(0.8) end),
+      {:rapl, :package} =>
+        series(1_800_000, 1000, fn t -> 2.5 + 7 * wave(t, 400_000) + noise(0.6) end),
+      {:rapl, :cores} =>
+        series(1_800_000, 1000, fn t -> 1.0 + 5 * wave(t, 400_000) + noise(0.4) end),
+      {:rapl, :graphics} =>
+        series(1_800_000, 1000, fn t -> 0.3 + 0.8 * wave(t, 90_000) + noise(0.1) end),
+      {:rapl, :memory} => series(1_800_000, 1000, fn _t -> 0.6 + noise(0.05) end),
       {:link, :ipv6} =>
         series(1_800_000, 2000, fn t -> if t in 600_000..1_200_000, do: 1, else: 0 end),
       {:event, :wifi} => events([{1_320_000, 1}, {1_140_000, -1}, {1_110_000, 1}]),
@@ -93,6 +102,7 @@ defmodule Jantar.Frame.Demo do
         links: [%{id: 1, freq_mhz: 5180, active: false}, %{id: 2, freq_mhz: 6375, active: true}]
       },
       link: %{route: true, gateway: true, iface: "wlan0", gateway_ip: "192.168.1.1", ipv6: false},
+      rapl: %{platform: 11.2, package: 6.4, cores: 3.9, graphics: 0.7, memory: 0.6},
       swap: %{in: 0.0, out: 0.0, used_kb: 812_000, total_kb: 67_108_860},
       disk: %{
         device: "nvme0n1",
