@@ -13,3 +13,6 @@ erl_crash.dump
 /result-*
 # ExUnit @tag :tmp_dir output
 /tmp/
+# Built renderers (Rustler and the cairo Port build into priv/)
+/priv/native/
+/priv/cairo_port
