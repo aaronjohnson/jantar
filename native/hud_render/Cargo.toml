@@ -1,0 +1,20 @@
+[package]
+name = "hud_render"
+version = "0.1.0"
+edition = "2021"
+description = "beam-hud's Rust renderer: draws a display list with tiny-skia and fontdue, to PNG or the framebuffer."
+
+[lib]
+name = "hud_render"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "0.38"
+tiny-skia = "0.12"
+fontdue = "0.9"
+memmap2 = "0.9"
+libc = "0.2"
+
+[profile.release]
+opt-level = 3

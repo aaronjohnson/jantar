@@ -56,6 +56,28 @@ defmodule Mix.Tasks.Compile.HudCore do
   end
 end
 
+defmodule Mix.Tasks.Compile.CairoPort do
+  @moduledoc """
+  Builds the C renderer (c/cairo_port) with make, into the app's priv
+  directory, where `BeamHud.Render.Cairo` starts it from.
+  """
+  use Mix.Task.Compiler
+
+  @impl Mix.Task.Compiler
+  def run(_args) do
+    out = Path.join(Mix.Project.app_path(), "priv/cairo_port")
+
+    case System.cmd("make", ["-s", "-C", "c/cairo_port", "OUT=#{out}"], stderr_to_stdout: true) do
+      {_, 0} ->
+        {:ok, []}
+
+      {output, _} ->
+        Mix.shell().error(output)
+        {:error, []}
+    end
+  end
+end
+
 defmodule BeamHud.MixProject do
   use Mix.Project
 
@@ -65,10 +87,16 @@ defmodule BeamHud.MixProject do
       version: "0.1.0",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
-      # Build the Gleam core first, then the usual Elixir compilers.
-      compilers: [:hud_core | Mix.compilers()],
-      deps: []
+      # Build the Gleam core and the C port first, then the usual compilers
+      # (Rustler builds the NIF when BeamHud.Render.Native is compiled).
+      compilers: [:hud_core, :cairo_port | Mix.compilers()],
+      deps: deps()
     ]
+  end
+
+  # Rustler builds the Rust NIF (native/hud_render) with cargo at compile time.
+  defp deps do
+    [{:rustler, "~> 0.38", runtime: false}]
   end
 
   def application do
