@@ -15,6 +15,13 @@ defmodule Jantar.Display.Ticker do
     * On becoming hidden, or on shutdown: KD_TEXT, Mode not visible. The
       sensors keep collecting either way.
 
+  Keys on the dashboard's VT (`keys/2`): in the overview, 1 / 2 / 3 show
+  live samples, the last day or the last 30 days. A section's letter
+  (c CPU, g GPU · NPU, m memory and storage, t thermals, p power,
+  n network) zooms in on it, full screen, where 1 / 2 / 3 show the last
+  1, 5 or 30 minutes. Esc, 0, q or the same letter again go back to the
+  overview, as it was.
+
   With a real tty (KD_GRAPHICS), the VT is first put in process mode
   (VT_SETMODE). The kernel ignores switches away from a KD_GRAPHICS VT in
   automatic mode, so without it Ctrl+Alt+F1 would do nothing. In process
@@ -62,6 +69,8 @@ defmodule Jantar.Display.Ticker do
       visible: false,
       vt_process: false,
       scale: :live,
+      focus: nil,
+      window: 300_000,
       keys: nil,
       held: false,
       frame_timer: nil,
@@ -131,25 +140,18 @@ defmodule Jantar.Display.Ticker do
 
   def handle_info(:vt_signal, state), do: {:noreply, state}
 
-  # Keys typed on the dashboard's VT: 1 live, 2 the last day, 3 the last
-  # 30 days.
+  # Keys typed on the dashboard's VT (see keys/2).
   def handle_info({port, {:data, bytes}}, %{keys: port} = state) do
-    scale =
-      bytes
-      |> :binary.bin_to_list()
-      |> Enum.reduce(state.scale, fn
-        ?1, _ -> :live
-        ?2, _ -> :day
-        ?3, _ -> :month
-        _, scale -> scale
-      end)
+    view = Map.take(state, [:scale, :focus, :window])
+    new = keys(bytes, view)
 
-    if scale != state.scale and state.visible do
+    if new != view and state.visible do
+      if state.frame_timer, do: Process.cancel_timer(state.frame_timer)
       Render.invalidate(@backend)
       send(self(), :frame)
     end
 
-    {:noreply, %{state | scale: scale}}
+    {:noreply, Map.merge(state, new)}
   end
 
   def handle_info({port, {:exit_status, _}}, %{keys: port} = state),
@@ -160,10 +162,11 @@ defmodule Jantar.Display.Ticker do
   def handle_info(:frame, state) do
     {build_us, {list, meta}} =
       :timer.tc(fn ->
-        Frame.build(Frame.snapshot(System.monotonic_time(:millisecond), state.scale),
+        Frame.build(Frame.snapshot(System.monotonic_time(:millisecond), snapshot_scale(state)),
           width: state.width,
           height: state.height,
-          label: label(state)
+          label: label(state),
+          focus: state.focus
         )
       end)
 
@@ -186,7 +189,9 @@ defmodule Jantar.Display.Ticker do
 
     # An archive changes once a minute: a frame every 2 s is plenty.
     interval =
-      if state.scale == :live, do: frame_interval(meta.sensors, state), else: 2000
+      if snapshot_scale(state) in [:day, :month],
+        do: 2000,
+        else: frame_interval(meta.sensors, state)
 
     timer = Process.send_after(self(), :frame, interval)
     {:noreply, %{state | frame_timer: timer, interval_ms: interval}}
@@ -313,12 +318,60 @@ defmodule Jantar.Display.Ticker do
     end
   end
 
-  # Top right: the backend, the scale, and the keys.
+  # ------------------------------------------------------------------ keys
+
+  @sections %{
+    ?c => "CPU",
+    ?g => "GPU · NPU",
+    ?m => "MEMORY · STORAGE",
+    ?t => "THERMALS",
+    ?p => "POWER",
+    ?n => "NETWORK"
+  }
+  @windows %{?1 => 60_000, ?2 => 300_000, ?3 => 1_800_000}
+  @scales %{?1 => :live, ?2 => :day, ?3 => :month}
+
+  @doc """
+  What the keys typed (one read's bytes) do to the view, a map of `:scale`
+  (overview: `:live`, `:day`, `:month`), `:focus` (nil, or the zoomed
+  section's title) and `:window` (zoomed: ms shown). The overview's scale is
+  kept while zoomed. A lone Esc goes back; Esc inside a longer read is the
+  start of an arrow or function key's sequence, and is ignored.
+  """
+  def keys(<<27>>, view), do: %{view | focus: nil}
+  def keys(bytes, view), do: bytes |> :binary.bin_to_list() |> Enum.reduce(view, &key/2)
+
+  defp key(k, %{focus: nil} = view) do
+    cond do
+      section = @sections[k] -> %{view | focus: section, window: 300_000}
+      scale = @scales[k] -> %{view | scale: scale}
+      true -> view
+    end
+  end
+
+  defp key(k, view) do
+    cond do
+      k in [?0, ?q] or @sections[k] == view.focus -> %{view | focus: nil}
+      section = @sections[k] -> %{view | focus: section, window: 300_000}
+      window = @windows[k] -> %{view | window: window}
+      true -> view
+    end
+  end
+
+  defp snapshot_scale(%{focus: nil, scale: scale}), do: scale
+  defp snapshot_scale(%{window: ms}), do: {:window, ms}
+
+  # Top right: the backend, the view, and the keys.
   defp label(%{keys: nil} = state), do: state.label
 
-  defp label(state) do
+  defp label(%{focus: nil} = state) do
     scale = %{live: "live", day: "24 h", month: "30 days"}[state.scale]
-    "#{state.label} · #{scale}   1 live  2 day  3 month"
+    "#{state.label} · #{scale}   1 live  2 day  3 month   zoom c g m t p n"
+  end
+
+  defp label(state) do
+    "#{state.label} · #{state.focus} #{div(state.window, 60_000)} min   " <>
+      "1 1m  2 5m  3 30m   esc back"
   end
 
   defp vt_reldisp(state, arg) do

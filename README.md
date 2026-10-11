@@ -24,6 +24,20 @@ its progress and ETA.
 
 ![close-ups: CPU cores, GPU render and media, clocks, load](docs/screenshots/dials.png)
 
+## Keys
+
+On the dashboard's console:
+
+| key | overview | zoomed in |
+| --- | --- | --- |
+| `1` `2` `3` | live, the last day, the last 30 days | the last 1, 5, 30 minutes, as one lap |
+| `c` `g` `m` `t` `p` `n` | zoom in on CPU, GPU · NPU, memory · storage, thermals, power, network | switch to that section (its own letter goes back) |
+| `Esc` `0` `q` | | back to the overview, as it was |
+
+Zoomed in, one section fills the screen with larger dials. A window longer
+than a series keeps its samples (network traffic keeps 5 minutes) comes from
+the per-minute archive instead.
+
 It follows Solarized light or dark:
 
 ![jantar, Solarized light](docs/screenshots/light.png)

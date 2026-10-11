@@ -7,6 +7,10 @@ defmodule Mix.Tasks.Jantar.Png do
       mix jantar.png --backend cairo --out cairo.png --size 2880x1920
       mix jantar.png --demo                           the deterministic demo snapshot
       mix jantar.png --theme light --repeat 20        time 20 renders, report the median
+      mix jantar.png --demo --focus NETWORK --window 1  one section full screen, last minute
+
+  `--focus` takes a section title (CPU, NETWORK, "GPU · NPU", ...) and
+  `--window` minutes (default 5), as the dashboard's zoom keys do.
 
   Live data needs the sensors to have sampled a while; `--wait` ms (default
   3000) is how long to let them run first.
@@ -22,7 +26,9 @@ defmodule Mix.Tasks.Jantar.Png do
     demo: :boolean,
     theme: :string,
     wait: :integer,
-    repeat: :integer
+    repeat: :integer,
+    focus: :string,
+    window: :integer
   ]
 
   @impl Mix.Task
@@ -41,7 +47,19 @@ defmodule Mix.Tasks.Jantar.Png do
       Process.sleep(opts[:wait] || 3000)
     end
 
-    snapshot = if opts[:demo], do: Frame.Demo.snapshot(), else: Frame.snapshot()
+    window = {:window, (opts[:window] || 5) * 60_000}
+
+    snapshot =
+      case {opts[:demo], opts[:focus]} do
+        {true, nil} -> Frame.Demo.snapshot()
+        {true, _} -> Frame.window(Frame.Demo.snapshot(), elem(window, 1))
+        {_, nil} -> Frame.snapshot()
+        {_, _} -> Frame.snapshot(System.monotonic_time(:millisecond), window)
+      end
+
+    if opts[:focus] && opts[:focus] not in Frame.section_titles(),
+      do: Mix.raise("--focus: one of #{Enum.join(Frame.section_titles(), ", ")}")
+
     label = Atom.to_string(backend)
     # The demo pins the header, so its frames are reproducible.
     fixed = if opts[:demo], do: [host: "hadron", clock: "12:00:00"], else: []
@@ -50,7 +68,7 @@ defmodule Mix.Tasks.Jantar.Png do
 
     {build_us, {list, _meta}} =
       :timer.tc(fn ->
-        Frame.build(snapshot, [width: w, height: h, label: label] ++ fixed)
+        Frame.build(snapshot, [width: w, height: h, label: label, focus: opts[:focus]] ++ fixed)
       end)
 
     {:ok, server} = Render.start_link(backend)

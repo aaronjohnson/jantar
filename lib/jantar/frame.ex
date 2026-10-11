@@ -28,6 +28,9 @@ defmodule Jantar.Frame do
   # Fewer samples per lap than (lap length in units / this) are drawn as dots.
   @dot_spacing_units 3.0
 
+  # Text around a focused section's dials, relative to the overview.
+  @focus_text 1.8
+
   # ------------------------------------------------------------------ snapshot
 
   @series [:cpu, :clock, :mem, :rx, :tx, :temp, :power, :fan, :npu, :wifi] ++
@@ -74,6 +77,10 @@ defmodule Jantar.Frame do
   archives: one row per minute for 24 hours, or per hour for 30 days, drawn
   as one lap). For an archive, `samples` holds each row's mean at the middle
   of its step, and `rows` the `{t, min, mean, max}` rows themselves.
+
+  `{:window, ms}` (a focused section's 1, 5 or 30 minutes) draws the last
+  `ms` as one lap: the samples where History keeps that long, else the
+  per-minute archive rows.
   """
   def snapshot(now \\ System.monotonic_time(:millisecond), scale \\ :live) do
     gpu_series = for s <- History.series(), match?({:gpu, _}, s), do: s
@@ -99,6 +106,23 @@ defmodule Jantar.Frame do
 
   defp series_at({:event, _} = name, info, _scale, now), do: series_at(name, info, :live, now)
 
+  defp series_at(name, info, {:window, ms}, now) do
+    if info.window_ms >= ms do
+      window(series_at(name, info, :live, now), ms, now)
+    else
+      # Longer than the samples kept: one row per minute.
+      %{rows: rows} = series_at(name, info, :day, now)
+      rows = for {t, _, _, _} = r <- rows, now - t <= ms, do: r
+
+      %{
+        samples: for({t, _, mean, _} <- rows, do: {t, mean}),
+        rows: rows,
+        window_ms: ms,
+        lap: true
+      }
+    end
+  end
+
   defp series_at(name, _info, scale, now) do
     {:spec, step, keep} = History.scales()[scale]
     # Archive starts are wall-clock; the dials work in monotonic time.
@@ -113,12 +137,31 @@ defmodule Jantar.Frame do
     %{samples: for({t, _, mean, _} <- rows, do: {t, mean}), rows: rows, window_ms: keep}
   end
 
+  @doc """
+  A live snapshot cut to its last `ms`, each series drawn as one lap (what
+  `snapshot(now, {:window, ms})` does for series that keep that long; also
+  for the demo snapshot).
+  """
+  def window(%{series: series, now: now} = snap, ms) do
+    series =
+      Map.new(series, fn
+        {{:event, _} = name, s} -> {name, s}
+        {name, s} -> {name, window(s, ms, now)}
+      end)
+
+    Map.merge(snap, %{series: series, scale: {:window, ms}})
+  end
+
+  defp window(%{samples: samples}, ms, now),
+    do: %{samples: for({t, _} = s <- samples, now - t <= ms, do: s), window_ms: ms, lap: true}
+
   # ------------------------------------------------------------------ frame
 
   @doc """
   Build the display list. Options: `:width`, `:height` (pixels), `:theme`
   (default `Theme.current/0`), `:label` (shown top right, e.g. the backend),
-  `:host` and `:clock` (header text; default this machine and local time).
+  `:host` and `:clock` (header text; default this machine and local time),
+  `:focus` (one section's title: that section alone, full screen).
 
   Returns `{binary, meta}`; `meta.sensors` lists the sensors behind the
   panels drawn, so the display can pace frames to the fastest of them.
@@ -136,7 +179,10 @@ defmodule Jantar.Frame do
     foot_h = if ci && ci.installed, do: trunc(44 * u), else: 0
 
     panels = panels(snap)
-    {placed, titles} = sections(panels, w, h, margin, head_h, foot_h, u)
+    focus = if opts[:focus] in section_titles(), do: opts[:focus]
+    {placed, titles} = sections(panels, w, h, margin, head_h, foot_h, u, focus)
+    # Focused dials are about twice the size: so is the text around them.
+    tile_ctx = if focus, do: %{ctx | u: u * @focus_text}, else: ctx
 
     ops = [
       DL.fill(c.bg),
@@ -146,11 +192,11 @@ defmodule Jantar.Frame do
         else: []
       ),
       for({x, y, text, tint, tw} <- titles, do: section_title(ctx, x, y, text, tint, tw)),
-      for({panel, cx, y0, d} <- placed, do: tile(ctx, panel, cx, y0, d))
+      for({panel, cx, y0, d} <- placed, do: tile(tile_ctx, panel, cx, y0, d))
     ]
 
     meta = %{
-      sensors: panels |> Enum.map(& &1.sensor) |> Enum.uniq(),
+      sensors: placed |> Enum.map(&elem(&1, 0).sensor) |> Enum.uniq(),
       dial_size: placed |> Enum.map(&elem(&1, 3)) |> Enum.max(fn -> 0 end)
     }
 
@@ -174,20 +220,32 @@ defmodule Jantar.Frame do
     ]
   ]
 
+  @doc "The section titles, overview order: what `build/2`'s `:focus` takes."
+  def section_titles, do: for(col <- @columns, {text, _, _} <- col, do: text)
+
   # Lay the sections out: returns `{panel, centre x, top y, dial size}` for
   # each panel and `{x, y, text, tint, width}` for each section title. A section's
   # dials share its column's width; one cap on dial size, the largest that
   # lets both columns fit the height, keeps single dials from growing huge.
-  defp sections(panels, w, h, margin, head_h, foot_h, u) do
+  # Focused, one section has the whole screen: a single column.
+  defp sections(panels, w, h, margin, head_h, foot_h, u, focus) do
     by_title = Map.new(panels, &{panel_title(&1), &1})
     gap = trunc(18 * u)
-    {title_h, text_h} = {trunc(24 * u), trunc(46 * u)}
+    title_h = trunc(24 * u)
+    text_h = trunc(46 * u * if(focus, do: @focus_text, else: 1))
     top = head_h + div(margin, 2)
     avail = h - top - foot_h - margin
-    col_w = (w - 2 * margin - gap) / 2
+
+    layout =
+      case for(col <- @columns, {^focus, _, _} = sec <- col, do: sec) do
+        [sec] -> [[sec]]
+        [] -> @columns
+      end
+
+    col_w = (w - 2 * margin - gap * (length(layout) - 1)) / length(layout)
 
     columns =
-      for column <- @columns do
+      for column <- layout do
         for {text, tint, titles} <- column,
             members = for(t <- titles, p = by_title[t], do: p),
             members != [],
@@ -195,13 +253,13 @@ defmodule Jantar.Frame do
       end
 
     # Anything not in a section (a new sensor) goes at the end of the shorter
-    # column, so it still shows.
+    # column, so it still shows (in the overview).
     known = @columns |> Enum.flat_map(fn col -> Enum.flat_map(col, &elem(&1, 2)) end)
     extra = Enum.reject(panels, &(panel_title(&1) in known))
-    [left, right] = columns
+    [left, right] = if length(columns) == 2, do: columns, else: [[], []]
 
     columns =
-      if extra == [],
+      if extra == [] or length(columns) != 2,
         do: columns,
         else: [left, right ++ [{"MORE", :fg, extra}]]
 
@@ -224,9 +282,11 @@ defmodule Jantar.Frame do
         x0 = margin + i * (col_w + gap)
         # Spread spare height evenly between the sections.
         spare = max(0, avail - height.(col, cap)) / max(1, length(col))
+        # A focused section sits in the middle of the screen.
+        start = if focus, do: top + spare / 2, else: top
 
         {acc, _y} =
-          Enum.reduce(col, {acc, top}, fn {text, tint, members} = sec, {{placed, titles}, y} ->
+          Enum.reduce(col, {acc, start}, fn {text, tint, members} = sec, {{placed, titles}, y} ->
             d = trunc(size.(sec, cap))
             share = col_w / length(members)
 
@@ -416,7 +476,7 @@ defmodule Jantar.Frame do
         dial(:cpu, "LOAD", :yellow, [{:cpu, 1, :yellow, :yellow}], hist,
           guides: [0.5, 0.75],
           centre: [{Format.pct(s.cpu.load), :yellow, true}],
-          info: [{"#{length(s.cpu.ids)} cores", :fg}, {"all cores, 5 min", :muted}]
+          info: [{"#{length(s.cpu.ids)} cores", :fg}, {"all cores", :muted}]
         )
     ]
     |> Enum.filter(& &1)
@@ -652,10 +712,11 @@ defmodule Jantar.Frame do
         _ -> {:linear, lo, hi}
       end
 
-    # An archive is one lap: 24 hours round the dial, like a sundial, or 30 days.
+    # An archive is one lap: 24 hours round the dial, like a sundial, or 30
+    # days; so is a focused section's window.
     period =
       cond do
-        archive? -> {:some, window}
+        archive? or hist.(first)[:lap] -> {:some, window}
         opts[:period] -> {:some, opts[:period]}
         true -> :none
       end
