@@ -49,13 +49,18 @@ defmodule Jantar.Frame do
   Everything a frame needs, read from History's ETS tables (no messages):
   each sensor's latest values (nil while unavailable) and each series'
   samples and window.
+
+  `scale` is `:live` (the samples), or `:day` / `:month` (History's
+  archives: one row per minute for 24 hours, or per hour for 30 days, drawn
+  as one lap). For an archive, `samples` holds each row's mean at the middle
+  of its step, and `rows` the `{t, min, mean, max}` rows themselves.
   """
-  def snapshot(now \\ System.monotonic_time(:millisecond)) do
+  def snapshot(now \\ System.monotonic_time(:millisecond), scale \\ :live) do
     gpu_series = for s <- History.series(), match?({:gpu, _}, s), do: s
 
     series =
       for name <- @series ++ gpu_series, info = History.info(name), into: %{} do
-        {name, %{samples: History.samples(name), window_ms: info.window_ms}}
+        {name, series_at(name, info, scale, now)}
       end
 
     sensors =
@@ -66,7 +71,24 @@ defmodule Jantar.Frame do
         end
       end
 
-    %{now: now, series: series, sensors: sensors}
+    %{now: now, series: series, sensors: sensors, scale: scale}
+  end
+
+  defp series_at(name, info, :live, _now),
+    do: %{samples: History.samples(name), window_ms: info.window_ms}
+
+  defp series_at(name, _info, scale, now) do
+    {:spec, step, keep} = History.scales()[scale]
+    # Archive starts are wall-clock; the dials work in monotonic time.
+    offset = System.system_time(:millisecond) - System.monotonic_time(:millisecond)
+    mid = div(step, 2)
+
+    rows =
+      for {start, min, mean, max} <- History.archive(name, scale),
+          t = min(start + mid - offset, now),
+          do: {t, min, mean, max}
+
+    %{samples: for({t, _, mean, _} <- rows, do: {t, mean}), rows: rows, window_ms: keep}
   end
 
   # ------------------------------------------------------------------ frame
@@ -340,6 +362,7 @@ defmodule Jantar.Frame do
   defp dial(sensor, title, tint, series, hist, opts) do
     {first, _, _, _} = hd(series)
     window = hist.(first).window_ms
+    archive? = Map.has_key?(hist.(first), :rows)
     {lo, hi} = range(opts[:scale] || {:linear, 0.0, 1.0}, opts[:auto], hist.(first).samples)
 
     scale =
@@ -348,7 +371,13 @@ defmodule Jantar.Frame do
         _ -> {:linear, lo, hi}
       end
 
-    period = if opts[:period], do: {:some, opts[:period]}, else: :none
+    # An archive is one lap: 24 hours round the dial, like a sundial, or 30 days.
+    period =
+      cond do
+        archive? -> {:some, window}
+        opts[:period] -> {:some, opts[:period]}
+        true -> :none
+      end
 
     %{
       kind: :dial,
@@ -358,7 +387,9 @@ defmodule Jantar.Frame do
       series:
         for(
           {name, sign, role, neg} <- series,
-          do: {floor_idle(hist.(name).samples, opts), sign, role, neg}
+          do:
+            {floor_idle(hist.(name).samples, opts), sign, role, neg,
+             floor_idle_rows(hist.(name)[:rows], opts)}
         ),
       polar: :jantar_core@polar.dial(scale, opts[:mirrored] || false, window, period),
       guides: opts[:guides] || [],
@@ -380,6 +411,20 @@ defmodule Jantar.Frame do
 
       _ ->
         samples
+    end
+  end
+
+  defp floor_idle_rows(nil, _opts), do: nil
+
+  defp floor_idle_rows(rows, opts) do
+    case {opts[:idle_floor], opts[:scale]} do
+      {true, {:log, a, _}} ->
+        floor = :math.pow(10, a) * 1.05
+        lift = fn v -> if v < floor, do: floor, else: v end
+        for {t, min, mean, max} <- rows, do: {t, lift.(min), lift.(mean), lift.(max)}
+
+      _ ->
+        rows
     end
   end
 
@@ -448,6 +493,8 @@ defmodule Jantar.Frame do
     ]
   end
 
+  defp mins(ms) when ms >= 2 * 86_400_000, do: "#{round(ms / 86_400_000)} days"
+  defp mins(ms) when ms >= 2 * 3_600_000, do: "#{round(ms / 3_600_000)} h"
   defp mins(ms) when ms >= 60_000, do: "#{round(ms / 60_000)} min"
   defp mins(ms), do: "#{div(ms, 1000)} s"
 
@@ -545,7 +592,7 @@ defmodule Jantar.Frame do
     geo = %{cx: cx, cy: cy, r0: r0, r1: r1, window: window, period: period}
 
     results =
-      for {samples, sign, role, neg} <- p.series do
+      for {samples, sign, role, neg, rows} <- p.series do
         points = for {t, v} <- samples, is_number(v), do: {t, v * sign / 1}
         {older, newest} = Enum.split(points, -3)
 
@@ -557,11 +604,16 @@ defmodule Jantar.Frame do
           end
 
         ops =
-          if :jantar_core@polar.dense(length(points), laps, lap_units / @dot_spacing_units) do
-            bucket_ms = max(1, round(period * @bucket_units / lap_units))
-            band(ctx, p.polar, older, bucket_ms, geo, role, neg)
-          else
-            dots(ctx, p.polar, older, geo, role, neg)
+          cond do
+            rows != nil ->
+              archive_band(ctx, p.polar, rows, sign, geo, role, neg)
+
+            :jantar_core@polar.dense(length(points), laps, lap_units / @dot_spacing_units) ->
+              bucket_ms = max(1, round(period * @bucket_units / lap_units))
+              band(ctx, p.polar, older, bucket_ms, geo, role, neg)
+
+            true ->
+              dots(ctx, p.polar, older, geo, role, neg)
           end
 
         {ops, glows}
@@ -588,10 +640,32 @@ defmodule Jantar.Frame do
 
   # Dense: per bucket a radial stroke from min to max (faint), and a line
   # through the means, one polyline per lap.
-  defp band(%{c: c, u: u, now: now}, polar, points, bucket_ms, geo, role, neg) do
+  defp band(%{now: now} = ctx, polar, points, bucket_ms, geo, role, neg) do
+    raw = :jantar_core@polar.buckets(points, now, bucket_ms)
+    band_buckets(ctx, polar, raw, bucket_ms, geo, role, neg)
+  end
+
+  # An archive's rows are buckets already: one per step, with min, mean and
+  # max. A missing step (it wasn't running) breaks the line.
+  defp archive_band(%{now: now} = ctx, polar, rows, sign, geo, role, neg) do
+    step =
+      case rows do
+        [{t1, _, _, _}, {t2, _, _, _} | _] -> max(1, t2 - t1)
+        _ -> 60_000
+      end
+
+    raw =
+      for {t, min, mean, max} <- rows do
+        {a, b} = {min * sign, max * sign}
+        {:bucket, now - t, Kernel.min(a, b), Kernel.max(a, b), mean * sign, 1}
+      end
+
+    band_buckets(ctx, polar, raw, step, geo, role, neg)
+  end
+
+  defp band_buckets(%{c: c, u: u}, polar, raw, bucket_ms, geo, role, neg) do
     buckets =
-      for {:bucket, age, lo, hi, mean, _count} <-
-            :jantar_core@polar.buckets(points, now, bucket_ms),
+      for {:bucket, age, lo, hi, mean, _count} <- raw,
           :jantar_core@polar.visible(polar, lo) or :jantar_core@polar.visible(polar, hi) do
         a = :jantar_core@polar.angle(age, geo.period)
         col = color(c, role, neg, mean)

@@ -61,6 +61,8 @@ defmodule Jantar.Display.Ticker do
       battery_max_fps: Keyword.get(opts, :battery_max_fps, 2),
       visible: false,
       vt_process: false,
+      scale: :live,
+      keys: nil,
       held: false,
       frame_timer: nil,
       frames: 0,
@@ -129,15 +131,39 @@ defmodule Jantar.Display.Ticker do
 
   def handle_info(:vt_signal, state), do: {:noreply, state}
 
+  # Keys typed on the dashboard's VT: 1 live, 2 the last day, 3 the last
+  # 30 days.
+  def handle_info({port, {:data, bytes}}, %{keys: port} = state) do
+    scale =
+      bytes
+      |> :binary.bin_to_list()
+      |> Enum.reduce(state.scale, fn
+        ?1, _ -> :live
+        ?2, _ -> :day
+        ?3, _ -> :month
+        _, scale -> scale
+      end)
+
+    if scale != state.scale and state.visible do
+      Render.invalidate(@backend)
+      send(self(), :frame)
+    end
+
+    {:noreply, %{state | scale: scale}}
+  end
+
+  def handle_info({port, {:exit_status, _}}, %{keys: port} = state),
+    do: {:noreply, %{state | keys: nil}}
+
   def handle_info(:frame, %{visible: false} = state), do: {:noreply, %{state | frame_timer: nil}}
 
   def handle_info(:frame, state) do
     {build_us, {list, meta}} =
       :timer.tc(fn ->
-        Frame.build(Frame.snapshot(),
+        Frame.build(Frame.snapshot(System.monotonic_time(:millisecond), state.scale),
           width: state.width,
           height: state.height,
-          label: state.label
+          label: label(state)
         )
       end)
 
@@ -158,7 +184,10 @@ defmodule Jantar.Display.Ticker do
           %{state | frame_error: reason}
       end
 
-    interval = frame_interval(meta.sensors, state)
+    # An archive changes once a minute: a frame every 2 s is plenty.
+    interval =
+      if state.scale == :live, do: frame_interval(meta.sensors, state), else: 2000
+
     timer = Process.send_after(self(), :frame, interval)
     {:noreply, %{state | frame_timer: timer, interval_ms: interval}}
   end
@@ -181,6 +210,11 @@ defmodule Jantar.Display.Ticker do
     if state.vt_process do
       kd(state, false)
       Jantar.Render.Native.vt_process(state.tty, 0)
+    end
+
+    if state.keys do
+      Jantar.Render.Native.tty_raw(state.tty, false)
+      Port.close(state.keys)
     end
 
     :ok
@@ -242,7 +276,8 @@ defmodule Jantar.Display.Ticker do
 
     case Jantar.Render.Native.vt_process(state.tty, Jantar.Display.VtSignal.number()) do
       ok when ok in [:ok, {:ok, :ok}] ->
-        %{state | vt_process: true, held: foreground_vt(state.active_file) == state.vt}
+        state = %{state | vt_process: true, held: foreground_vt(state.active_file) == state.vt}
+        listen_keys(state)
 
       {:error, reason} ->
         Logger.warning(
@@ -261,6 +296,29 @@ defmodule Jantar.Display.Ticker do
       ok when ok in [:ok, {:ok, :ok}] -> :ok
       {:error, reason} -> Logger.warning("#{reason}; the screen may not show the dashboard")
     end
+  end
+
+  # Read keys from the VT: raw mode (each key at once, no echo), and `cat` of
+  # the tty in a Port, which sends us each key as it comes and costs nothing
+  # in between. A failure just means no keyboard.
+  defp listen_keys(state) do
+    with ok when ok in [:ok, {:ok, :ok}] <- Jantar.Render.Native.tty_raw(state.tty, true),
+         cat when is_binary(cat) <- System.find_executable("cat") do
+      port = Port.open({:spawn_executable, cat}, [:binary, :exit_status, args: [state.tty]])
+      %{state | keys: port}
+    else
+      other ->
+        Logger.warning("no keyboard on #{state.vt}: #{inspect(other)}")
+        state
+    end
+  end
+
+  # Top right: the backend, the scale, and the keys.
+  defp label(%{keys: nil} = state), do: state.label
+
+  defp label(state) do
+    scale = %{live: "live", day: "24 h", month: "30 days"}[state.scale]
+    "#{state.label} · #{scale}   1 live  2 day  3 month"
   end
 
   defp vt_reldisp(state, arg) do

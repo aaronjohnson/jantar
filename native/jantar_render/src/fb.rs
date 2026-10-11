@@ -154,3 +154,29 @@ pub fn fb_restore(fb: &str) -> Result<(), String> {
     let rc = unsafe { libc::ioctl(file.as_raw_fd(), FBIOPUT_VSCREENINFO as _, var.as_ptr()) };
     if rc == 0 { Ok(()) } else { Err(format!("FBIOPUT_VSCREENINFO on {}: {}", fb, std::io::Error::last_os_error())) }
 }
+
+/// Keys one at a time and unechoed (raw = true), or back to the usual line
+/// editing with echo (false), on a tty, for the dashboard's keyboard.
+pub fn tty_raw(tty: &str, raw: bool) -> Result<(), String> {
+    let file = OpenOptions::new().read(true).write(true).open(tty).map_err(|e| format!("{}: {}", tty, e))?;
+    let fd = file.as_raw_fd();
+    // SAFETY: termios is plain data; tcgetattr fills it before we use it.
+    let mut t: libc::termios = unsafe { std::mem::zeroed() };
+    if unsafe { libc::tcgetattr(fd, &mut t) } != 0 {
+        return Err(format!("tcgetattr on {}: {}", tty, std::io::Error::last_os_error()));
+    }
+    if raw {
+        // No ISIG: Ctrl+C on the dashboard must not send SIGINT to the VM
+        // (the BEAM's break handler).
+        t.c_lflag &= !(libc::ICANON | libc::ECHO | libc::ISIG);
+        t.c_cc[libc::VMIN] = 1;
+        t.c_cc[libc::VTIME] = 0;
+    } else {
+        t.c_lflag |= libc::ICANON | libc::ECHO | libc::ISIG;
+    }
+    if unsafe { libc::tcsetattr(fd, libc::TCSANOW, &t) } == 0 {
+        Ok(())
+    } else {
+        Err(format!("tcsetattr on {}: {}", tty, std::io::Error::last_os_error()))
+    }
+}

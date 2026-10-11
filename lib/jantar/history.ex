@@ -2,7 +2,7 @@ defmodule Jantar.History do
   @moduledoc """
   Owns every time series and every sensor's latest reading, in ETS.
 
-  Two tables, both `:protected` (only this process writes, anyone reads) with
+  Three tables, all `:protected` (only this process writes, anyone reads) with
   `read_concurrency`, so a renderer or `mix jantar.dump` reads without sending a
   message:
 
@@ -16,6 +16,14 @@ defmodule Jantar.History do
       Gleam window bookkeeping for each series, and
       `{{:sensor, name}, status, current, t_ms}` with each sensor's status and
       latest values.
+
+    * `:jantar_archive` (`ordered_set`): the same series consolidated at
+      coarser steps, RRDtool-style: `{{series, scale, start}, min, mean, max,
+      count}`, one row per minute for a day (`:day`) and per hour for 30 days
+      (`:month`). Starts are wall-clock ms aligned to the step, so archives
+      line up across restarts. The step being filled is kept in
+      `:jantar_state` as `{{:open, series, scale}, step}`, so readers see the
+      current minute too. The arithmetic is the Gleam `jantar_core/archive`.
 
   Which samples to drop (outside the series' time window, or over the point
   cap) is decided by the Gleam `jantar_core/ring` module; this process just
@@ -37,6 +45,13 @@ defmodule Jantar.History do
 
   @samples :jantar_samples
   @state :jantar_state
+  @archive :jantar_archive
+
+  # Archive scales: {:spec, step_ms, keep_ms} (a Gleam archive.Spec).
+  @scales [day: {:spec, 60_000, 86_400_000}, month: {:spec, 3_600_000, 2_592_000_000}]
+
+  @doc "The archive scales and their `{:spec, step_ms, keep_ms}`."
+  def scales, do: @scales
 
   # Series nobody declared get this window.
   @default_window_ms 30 * 60_000
@@ -107,6 +122,27 @@ defmodule Jantar.History do
     end
   end
 
+  @doc """
+  A series' archive at `scale` (`:day` or `:month`) as `{start, min, mean,
+  max}` rows, oldest first, ending with the step still being filled.
+  `start` is wall-clock ms.
+  """
+  def archive(series, scale) do
+    rows =
+      :ets.select(@archive, [
+        {{{series, scale, :"$1"}, :"$2", :"$3", :"$4", :_}, [], [{{:"$1", :"$2", :"$3", :"$4"}}]}
+      ])
+
+    case :ets.lookup(@state, {:open, series, scale}) do
+      [{_, step}] ->
+        {:row, start, min, mean, max, _count} = :jantar_core@archive.finish(step)
+        rows ++ [{start, min, mean, max}]
+
+      [] ->
+        rows
+    end
+  end
+
   @doc "Every declared series name, sorted."
   def series do
     :ets.match(@state, {{:ring, :"$1"}, :_}) |> Enum.map(&hd/1) |> Enum.sort()
@@ -136,6 +172,7 @@ defmodule Jantar.History do
     Process.flag(:trap_exit, true)
     :ets.new(@samples, [:ordered_set, :protected, :named_table, read_concurrency: true])
     :ets.new(@state, [:set, :protected, :named_table, read_concurrency: true])
+    :ets.new(@archive, [:ordered_set, :protected, :named_table, read_concurrency: true])
     file = save_file(Keyword.get(opts, :state_dir, Application.get_env(:jantar, :state_dir)))
     if file, do: load(file)
     {:ok, %{max_points: Application.get_env(:jantar, :max_points, 7200), file: file}}
@@ -181,6 +218,7 @@ defmodule Jantar.History do
     {ring, dropped} = :jantar_core@ring.trim(ring, t, time_of)
     Enum.each(dropped, fn seq -> :ets.delete(@samples, {series, seq}) end)
     :ets.insert(@state, {{:ring, series}, ring})
+    if is_number(value), do: consolidate(series, t + wall_offset(), value / 1)
     {:reply, :ok, state}
   end
 
@@ -189,9 +227,39 @@ defmodule Jantar.History do
     {:reply, :ok, state}
   end
 
+  # ------------------------------------------------------------------ archives
+
+  # Fold a sample into each scale's open step; store a finished step as a row
+  # and drop rows past the scale's retention (once a step, so once a minute
+  # at most).
+  defp consolidate(series, wall, value) do
+    for {scale, spec} <- @scales do
+      key = {:open, series, scale}
+
+      open =
+        case :ets.lookup(@state, key) do
+          [{_, step}] -> {:some, step}
+          [] -> :none
+        end
+
+      {finished, {:some, step}} = :jantar_core@archive.add(spec, open, wall, value)
+      :ets.insert(@state, {key, step})
+
+      with {:some, {:row, start, min, mean, max, count}} <- finished do
+        :ets.insert(@archive, {{series, scale, start}, min, mean, max, count})
+        cutoff = :jantar_core@archive.expired_before(spec, wall)
+
+        :ets.select_delete(@archive, [
+          {{{series, scale, :"$1"}, :_, :_, :_, :_}, [{:<, :"$1", cutoff}], [true]}
+        ])
+      end
+    end
+  end
+
   # ------------------------------------------------------------------ saving
 
-  @version 1
+  # 2 added the archives; files from version 1 still load.
+  @version 2
 
   defp save_file(nil), do: nil
   defp save_file(dir), do: Path.join(dir, "history.etf")
@@ -204,7 +272,9 @@ defmodule Jantar.History do
     offset = wall_offset()
     rings = :ets.match_object(@state, {{:ring, :_}, :_})
     samples = for {key, t, v} <- :ets.tab2list(@samples), do: {key, t + offset, v}
-    data = :erlang.term_to_binary({@version, rings, samples}, [:compressed])
+    opens = :ets.match_object(@state, {{:open, :_, :_}, :_})
+    archive = :ets.tab2list(@archive)
+    data = :erlang.term_to_binary({@version, rings, samples, archive, opens}, [:compressed])
     tmp = file <> ".tmp"
 
     with :ok <- File.mkdir_p(Path.dirname(file)),
@@ -218,9 +288,12 @@ defmodule Jantar.History do
 
   defp load(file) do
     with {:ok, data} <- File.read(file),
-         {@version, rings, samples} <- :erlang.binary_to_term(data, [:safe]) do
+         {version, rings, samples, archive, opens} when version in [1, 2] <-
+           upgrade(:erlang.binary_to_term(data, [:safe])) do
       offset = wall_offset()
       :ets.insert(@state, rings)
+      :ets.insert(@state, opens)
+      :ets.insert(@archive, archive)
       :ets.insert(@samples, for({key, wall, v} <- samples, do: {key, wall - offset, v}))
       Logger.info("history: loaded #{length(samples)} samples from #{file}")
     else
@@ -230,4 +303,7 @@ defmodule Jantar.History do
   rescue
     e -> Logger.warning("history: ignoring #{file}: #{Exception.message(e)}")
   end
+
+  defp upgrade({1, rings, samples}), do: {1, rings, samples, [], []}
+  defp upgrade(other), do: other
 end

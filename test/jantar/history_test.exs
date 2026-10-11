@@ -88,4 +88,27 @@ defmodule Jantar.HistoryTest do
     History.push(s, 5, 1)
     assert Task.async(fn -> History.samples(s) end) |> Task.await() == [{5, 1}]
   end
+
+  test "archives consolidate each minute and hour to min, mean and max" do
+    s = unique(:archived)
+    History.declare(s, 3 * 3_600_000)
+    # Start on a wall-clock minute, so the steps are predictable.
+    offset = System.system_time(:millisecond) - System.monotonic_time(:millisecond)
+    t0 = 60_000 - rem(offset, 60_000) + 60_000
+
+    # Three minutes: values 1, 2, 3 in each, plus a gap that isn't counted.
+    for m <- 0..2,
+        {dt, v} <- [{0, 1.0}, {20_000, 2.0}, {30_000, nil}, {40_000, 3}],
+        do: History.push(s, t0 + m * 60_000 + dt, v)
+
+    day = History.archive(s, :day)
+    # Two finished minutes and the one still open.
+    assert length(day) == 3
+    assert Enum.all?(day, fn {_start, min, mean, max} -> {min, mean, max} == {1.0, 2.0, 3.0} end)
+    starts = Enum.map(day, &elem(&1, 0))
+    assert Enum.zip_with(tl(starts), starts, &(&1 - &2)) == [60_000, 60_000]
+
+    # One hour step, still open, holding all nine samples.
+    assert [{_, 1.0, 2.0, 3.0}] = History.archive(s, :month)
+  end
 end

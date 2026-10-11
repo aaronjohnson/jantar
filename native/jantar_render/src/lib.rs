@@ -96,6 +96,13 @@ fn fb_restore(fb: String) -> NifResult<rustler::Atom> {
     Ok(rustler::types::atom::ok())
 }
 
+/// Keys one at a time without echo (raw), or line editing again.
+#[rustler::nif(schedule = "DirtyIo")]
+fn tty_raw(tty: String, raw: bool) -> NifResult<rustler::Atom> {
+    fb::tty_raw(&tty, raw)?;
+    Ok(rustler::types::atom::ok())
+}
+
 /// For the crash demo: a Rust panic. Rustler catches it at the NIF boundary
 /// and raises an Erlang error in the calling process; the VM carries on.
 #[rustler::nif]
