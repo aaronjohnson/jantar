@@ -1,5 +1,5 @@
 {
-  description = "beam-hud: a BEAM (Gleam + Elixir) system monitor dashboard";
+  description = "jantar: a BEAM (Gleam + Elixir) system monitor dashboard";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -12,8 +12,8 @@
     in
     {
       packages.${system} = rec {
-        beam-hud = pkgs.callPackage ./nix/package.nix { beamPackages = beam; };
-        default = beam-hud;
+        jantar = pkgs.callPackage ./nix/package.nix { beamPackages = beam; };
+        default = jantar;
       };
 
       nixosModules.default = import ./nix/module.nix self;
@@ -47,7 +47,7 @@
           export HEX_HOME=$PWD/.nix-hex
           export ERL_AFLAGS="-kernel shell_history enabled"
           # The font both renderers draw with (the same one hud --fb uses).
-          export HUD_FONT_DIR=${pkgs.dejavu_fonts}/share/fonts/truetype
+          export JANTAR_FONT_DIR=${pkgs.dejavu_fonts}/share/fonts/truetype
         '';
       };
     };

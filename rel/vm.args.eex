@@ -1,4 +1,4 @@
-## beam-hud's VM flags.
+## jantar's VM flags.
 ##
 ## -noinput: the release never reads stdin (as a service its stdin is the tty).
 -noinput

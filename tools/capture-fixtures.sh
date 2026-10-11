@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Snapshot the files beam-hud reads into test/fixtures/capture/{t0,t1}, two
+# Snapshot the files jantar reads into test/fixtures/capture/{t0,t1}, two
 # seconds apart, laid out like the real root (proc/stat, sys/class/...), so the
 # sensors can be pointed at them with `root:` and rates can be computed.
 #

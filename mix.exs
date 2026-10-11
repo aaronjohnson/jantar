@@ -1,20 +1,20 @@
-defmodule Mix.Tasks.Compile.HudCore do
+defmodule Mix.Tasks.Compile.JantarCore do
   @moduledoc """
-  Builds the Gleam core (gleam/hud_core) and copies its compiled modules
-  (`:hud_core@parse`, `:gleam@list`, ...) into beam_hud's own ebin, so they
+  Builds the Gleam core (gleam/jantar_core) and copies its compiled modules
+  (`:jantar_core@parse`, `:gleam@list`, ...) into jantar's own ebin, so they
   are part of this application: on the code path in development, and
   included in a `mix release` like any module of ours.
 
   It is defined here in mix.exs, not under lib/, because Mix needs the
   compiler before it compiles anything in lib/.
 
-  If `HUD_CORE_BUILD` is set (the Nix package builds the Gleam project in its
+  If `JANTAR_CORE_BUILD` is set (the Nix package builds the Gleam project in its
   own derivation, with `gleam export erlang-shipment`), no Gleam toolchain is
-  needed: the `.beam` files under `$HUD_CORE_BUILD/*/ebin` are used instead.
+  needed: the `.beam` files under `$JANTAR_CORE_BUILD/*/ebin` are used instead.
   """
   use Mix.Task.Compiler
 
-  @gleam_project "gleam/hud_core"
+  @gleam_project "gleam/jantar_core"
   # Test-only packages that don't belong in the app.
   @skip ["gleeunit"]
 
@@ -40,7 +40,7 @@ defmodule Mix.Tasks.Compile.HudCore do
   end
 
   defp build do
-    case System.get_env("HUD_CORE_BUILD") do
+    case System.get_env("JANTAR_CORE_BUILD") do
       nil -> gleam_build()
       dir -> {:ok, dir}
     end
@@ -58,7 +58,7 @@ defmodule Mix.Tasks.Compile.HudCore do
         Mix.shell().error(output)
 
         diagnostic = %Mix.Task.Compiler.Diagnostic{
-          compiler_name: "hud_core",
+          compiler_name: "jantar_core",
           file: Path.expand(@gleam_project),
           message: "gleam build failed",
           position: 0,
@@ -73,7 +73,7 @@ end
 defmodule Mix.Tasks.Compile.CairoPort do
   @moduledoc """
   Builds the C renderer (c/cairo_port) with make, into the app's priv
-  directory, where `BeamHud.Render.Cairo` starts it from. If `CAIRO_PORT_BIN`
+  directory, where `Jantar.Render.Cairo` starts it from. If `CAIRO_PORT_BIN`
   is set (the Nix package builds it separately), that binary is copied
   instead.
   """
@@ -109,21 +109,21 @@ defmodule Mix.Tasks.Compile.CairoPort do
   end
 end
 
-defmodule BeamHud.MixProject do
+defmodule Jantar.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :beam_hud,
+      app: :jantar,
       version: "0.1.0",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       # Build the Gleam core and the C port first, then the usual compilers
-      # (Rustler builds the NIF when BeamHud.Render.Native is compiled).
-      compilers: [:hud_core, :cairo_port | Mix.compilers()],
+      # (Rustler builds the NIF when Jantar.Render.Native is compiled).
+      compilers: [:jantar_core, :cairo_port | Mix.compilers()],
       deps: deps(),
       releases: [
-        beam_hud: [
+        jantar: [
           # VM flags (battery-friendly scheduler settings, -noinput) are in
           # rel/vm.args.eex; environment defaults in rel/env.sh.eex.
           include_executables_for: [:unix],
@@ -133,14 +133,14 @@ defmodule BeamHud.MixProject do
     ]
   end
 
-  # Rustler builds the Rust NIF (native/hud_render) with cargo at compile time.
+  # Rustler builds the Rust NIF (native/jantar_render) with cargo at compile time.
   defp deps do
     [{:rustler, "~> 0.38", runtime: false}]
   end
 
   def application do
     [
-      mod: {BeamHud.Application, []},
+      mod: {Jantar.Application, []},
       extra_applications: [:logger]
     ]
   end

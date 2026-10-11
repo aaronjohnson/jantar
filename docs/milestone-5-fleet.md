@@ -24,7 +24,7 @@ service.
 - **Client library:** `emqtt` (MQTT 5, Erlang). On the Pis it is one more OTP app
   in their existing release (a custom BEAM app today, maybe Nerves someday): the
   collector + publisher, no renderer.
-- **Collector as a pure-BEAM library** (`beam_hud_collector`: sensors, History,
+- **Collector as a pure-BEAM library** (`jantar_collector`: sensors, History,
   publisher; Gleam core compiled to `.beam`). No NIFs, so the same package runs
   on x86 and ARM unchanged and drops into a Nerves firmware later. The renderers
   stay in the viewer-only app.
@@ -98,8 +98,8 @@ Remote collectors run as an unprivileged user; only the viewer needs `video`.
 
 ## Steps
 
-1. Collector-only mode (no renderer) and `BeamHud.Fleet.Publisher` /
-   `BeamHud.Fleet.Viewer` against a local Mosquitto, with two nodes on this laptop.
+1. Collector-only mode (no renderer) and `Jantar.Fleet.Publisher` /
+   `Jantar.Fleet.Viewer` against a local Mosquitto, with two nodes on this laptop.
 2. Viewer grid layout in both renderers; staleness colours; Last Will handling.
 3. Outage test: stop the viewer, then delay the link with tc/netem, and check that
    queued and backfilled data fill the gap.

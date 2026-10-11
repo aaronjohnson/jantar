@@ -1,0 +1,10 @@
+name = "jantar_core"
+version = "0.1.0"
+description = "Pure, typed logic for jantar: parsing, history windows, rates and dial maths. No I/O."
+target = "erlang"
+
+[dependencies]
+gleam_stdlib = ">= 1.0.0 and < 2.0.0"
+
+[dev_dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"

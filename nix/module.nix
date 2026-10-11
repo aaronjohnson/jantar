@@ -1,4 +1,4 @@
-# services.beam-hud: the dashboard on a VT of its own (Ctrl+Alt+F12 by
+# services.jantar: the dashboard on a VT of its own (Ctrl+Alt+F12 by
 # default), shown with no login. Imported by the flake as
 # nixosModules.default.
 self:
@@ -10,19 +10,19 @@ self:
 }:
 
 let
-  cfg = config.services.beam-hud;
+  cfg = config.services.jantar;
   tty = "tty${toString cfg.tty}";
   inherit (lib) mkOption mkEnableOption types;
 in
 {
-  options.services.beam-hud = {
-    enable = mkEnableOption "the beam-hud system dashboard on a text console";
+  options.services.jantar = {
+    enable = mkEnableOption "the jantar system dashboard on a text console";
 
     package = mkOption {
       type = types.package;
       default = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
-      defaultText = lib.literalExpression "beam-hud.packages.\${system}.default";
-      description = "The beam-hud release to run.";
+      defaultText = lib.literalExpression "jantar.packages.\${system}.default";
+      description = "The jantar release to run.";
     };
 
     tty = mkOption {
@@ -66,7 +66,7 @@ in
     themeFile = mkOption {
       type = types.nullOr types.str;
       default = null;
-      example = "/run/beam-hud-theme";
+      example = "/run/jantar-theme";
       description = ''
         Follow a file containing "dark" or "light", read every minute. The
         service can't ask a user's desktop (gsettings) itself; a user service
@@ -99,23 +99,23 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    users.users.beam-hud = {
+    users.users.jantar = {
       isSystemUser = true;
-      group = "beam-hud";
+      group = "jantar";
       # video: /dev/fb0 is root:video 0660.
       extraGroups = [ "video" ] ++ cfg.extraGroups;
-      description = "beam-hud dashboard";
+      description = "jantar dashboard";
     };
-    users.groups.beam-hud = { };
+    users.groups.jantar = { };
 
     # The dashboard's tty belongs to the service user (as a login's tty
     # belongs to whoever logs in), so it can open it to set KD_GRAPHICS.
     services.udev.extraRules = ''
-      SUBSYSTEM=="tty", KERNEL=="${tty}", OWNER="beam-hud", MODE="0600"
+      SUBSYSTEM=="tty", KERNEL=="${tty}", OWNER="jantar", MODE="0600"
     '';
 
-    systemd.services.beam-hud = {
-      description = "beam-hud dashboard on ${tty}";
+    systemd.services.jantar = {
+      description = "jantar dashboard on ${tty}";
       wantedBy = [ "multi-user.target" ];
       after = [ "systemd-user-sessions.service" ];
       conflicts = [
@@ -134,29 +134,29 @@ in
       ];
 
       environment = {
-        BEAM_HUD_DISPLAY = "1";
-        BEAM_HUD_TTY = "/dev/${tty}";
-        BEAM_HUD_FB = cfg.framebuffer;
-        BEAM_HUD_BACKEND = cfg.backend;
-        BEAM_HUD_THEME = if cfg.themeFile != null then "file:${cfg.themeFile}" else cfg.theme;
-        BEAM_HUD_MAX_FPS = toString cfg.maxFps;
-        BEAM_HUD_BATTERY_MAX_FPS = toString cfg.batteryMaxFps;
-        RELEASE_TMP = "/run/beam-hud";
+        JANTAR_DISPLAY = "1";
+        JANTAR_TTY = "/dev/${tty}";
+        JANTAR_FB = cfg.framebuffer;
+        JANTAR_BACKEND = cfg.backend;
+        JANTAR_THEME = if cfg.themeFile != null then "file:${cfg.themeFile}" else cfg.theme;
+        JANTAR_MAX_FPS = toString cfg.maxFps;
+        JANTAR_BATTERY_MAX_FPS = toString cfg.batteryMaxFps;
+        RELEASE_TMP = "/run/jantar";
         LANG = "C.UTF-8";
       };
 
       serviceConfig = {
-        User = "beam-hud";
-        Group = "beam-hud";
-        ExecStart = "${cfg.package}/bin/beam_hud start";
+        User = "jantar";
+        Group = "jantar";
+        ExecStart = "${cfg.package}/bin/jantar start";
         # The udev rule only applies when the tty device is (re)added, i.e.
         # at boot; also hand it over now, so the first switch works.
-        ExecStartPre = "+${pkgs.coreutils}/bin/chown beam-hud /dev/${tty}";
+        ExecStartPre = "+${pkgs.coreutils}/bin/chown jantar /dev/${tty}";
         # Whatever happened (stop, crash, kill), give the VT back its text.
         ExecStopPost = "+${cfg.package.passthru.cairoPort}/bin/cairo_port --kd-mode text /dev/${tty}";
         Restart = "on-failure";
         RestartSec = 5;
-        RuntimeDirectory = "beam-hud";
+        RuntimeDirectory = "jantar";
 
         # The tty becomes the service's controlling terminal, as with a
         # getty. The kernel lets a process set KDSETMODE on its own

@@ -1,4 +1,4 @@
-defmodule BeamHud.Fixtures do
+defmodule Jantar.Fixtures do
   @moduledoc """
   Test helpers for the recorded samples in test/fixtures/capture (see
   tools/capture-fixtures.sh) and for building small synthetic sysfs trees.

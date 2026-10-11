@@ -1,5 +1,5 @@
 /*
- * cairo_port: beam-hud's C renderer, run as an Erlang Port.
+ * cairo_port: jantar's C renderer, run as an Erlang Port.
  *
  * A separate OS process: the BEAM writes requests to our stdin and reads
  * replies from our stdout, each framed by a 4-byte big-endian length
@@ -17,7 +17,7 @@
  *   8 CRASH       (only with --allow-crash) dereference NULL, for the demo
  * Replies: 0 then the results, or 1 then an error message.
  *
- * The display list format is documented in lib/beam_hud/render/display_list.ex.
+ * The display list format is documented in lib/jantar/render/display_list.ex.
  */
 #include <cairo.h>
 #include <cairo-ft.h>
