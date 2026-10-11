@@ -11,3 +11,5 @@ erl_crash.dump
 # Nix
 /result
 /result-*
+# ExUnit @tag :tmp_dir output
+/tmp/
