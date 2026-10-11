@@ -21,11 +21,17 @@ defmodule Jantar.Application do
     children =
       [
         Jantar.History,
-        Jantar.SensorSupervisor,
-        Jantar.Theme
-      ] ++ display()
+        Jantar.SensorSupervisor
+      ] ++
+        wifi_events() ++
+        [Jantar.Theme] ++ display()
 
     Supervisor.start_link(children, strategy: :rest_for_one, name: Jantar.Supervisor)
+  end
+
+  # Wi-Fi events run with the sensors (not in tests, which start their own).
+  defp wifi_events do
+    if Application.get_env(:jantar, :start_sensors, true), do: [Jantar.WifiEvents], else: []
   end
 
   # The dashboard starts with the app only if configured; otherwise

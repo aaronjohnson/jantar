@@ -20,6 +20,7 @@ defmodule Jantar.SensorSupervisor do
     Jantar.Sensors.Npu,
     Jantar.Sensors.Gpu,
     Jantar.Sensors.Wifi,
+    Jantar.Sensors.Link,
     Jantar.Sensors.CiRunner
   ]
 

@@ -439,3 +439,70 @@ pub fn wifi(text: String) -> Wifi {
     bitrate_mbit: bitrate,
   )
 }
+
+// ------------------------------------------------------------------ link health
+
+/// The default route from /proc/net/route: its interface and gateway as a
+/// dotted IPv4 address. The kernel writes addresses as little-endian hex
+/// ("0158A8C0" is 192.168.88.1). Error when there is no default route,
+/// e.g. after a DHCP lease is lost.
+pub fn default_route(text: String) -> Result(#(String, String), Nil) {
+  text
+  |> lines
+  |> list.drop(1)
+  |> list.find_map(fn(line) {
+    case fields(line) {
+      [iface, "00000000", gateway, ..] -> {
+        use ip <- result.map(hex_ipv4(gateway))
+        #(iface, ip)
+      }
+      _ -> Error(Nil)
+    }
+  })
+}
+
+fn hex_ipv4(hex: String) -> Result(String, Nil) {
+  use n <- result.try(int.base_parse(hex, 16))
+  [0, 8, 16, 24]
+  |> list.map(fn(shift) {
+    int.to_string(int.bitwise_and(int.bitwise_shift_right(n, shift), 255))
+  })
+  |> string.join(".")
+  |> Ok
+}
+
+/// Whether /proc/net/arp has a completed entry (flags 0x2) for this address:
+/// the gateway answered ARP recently. No ping needed.
+pub fn arp_reachable(text: String, ip: String) -> Bool {
+  text
+  |> lines
+  |> list.drop(1)
+  |> list.any(fn(line) {
+    case fields(line) {
+      [addr, _hw_type, flags, ..] -> addr == ip && flags == "0x2"
+      _ -> False
+    }
+  })
+}
+
+/// What `iw event` reported for an interface.
+pub type WifiEvent {
+  /// Joined an access point: a first connection or a roam to another.
+  Connected(bssid: String)
+  Disconnected(reason: String)
+  OtherEvent
+}
+
+/// One line of `iw event -t`: "1791692363.36: wlp0s20f3 (phy #0): connected
+/// to 00:00:5e:00:53:0a". Returns the interface and the event.
+pub fn iw_event(line: String) -> Result(#(String, WifiEvent), Nil) {
+  use #(_ts, rest) <- result.try(string.split_once(line, ": "))
+  use #(iface, rest) <- result.try(string.split_once(rest, " (phy"))
+  use #(_phy, message) <- result.map(string.split_once(rest, "): "))
+  let event = case message {
+    "connected to " <> bssid -> Connected(string.trim(bssid))
+    "disconnected" <> reason -> Disconnected(string.trim(reason))
+    _ -> OtherEvent
+  }
+  #(iface, event)
+}

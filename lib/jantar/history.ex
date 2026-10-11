@@ -218,7 +218,10 @@ defmodule Jantar.History do
     {ring, dropped} = :jantar_core@ring.trim(ring, t, time_of)
     Enum.each(dropped, fn seq -> :ets.delete(@samples, {series, seq}) end)
     :ets.insert(@state, {{:ring, series}, ring})
-    if is_number(value), do: consolidate(series, t + wall_offset(), value / 1)
+    # Events are moments, not levels: nothing to average.
+    if is_number(value) and not match?({:event, _}, series),
+      do: consolidate(series, t + wall_offset(), value / 1)
+
     {:reply, :ok, state}
   end
 
