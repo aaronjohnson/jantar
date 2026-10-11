@@ -1,0 +1,13 @@
+# Mix
+/_build/
+/deps/
+/cover/
+/doc/
+erl_crash.dump
+*.ez
+# Mix/Hex state kept in the project by the devShell
+/.nix-mix/
+/.nix-hex/
+# Nix
+/result
+/result-*
