@@ -31,7 +31,7 @@ On the dashboard's console:
 | key | overview | zoomed in |
 | --- | --- | --- |
 | `1` `2` `3` | live, the last day, the last 30 days | the last 1, 5, 30 minutes, as one lap |
-| `c` `g` `m` `t` `p` `n` | zoom in on CPU, GPU · NPU, memory · storage, thermals, power, network | switch to that section (its own letter goes back) |
+| `c` `t` `g` `p` `m` `n` | zoom in on CPU, thermals, GPU · NPU, power, memory · storage, network (screen order: left to right, top to bottom) | switch to that section (its own letter goes back) |
 | `Esc` `0` `q` | | back to the overview, as it was |
 
 Zoomed in, one section fills the screen with larger dials. A window longer

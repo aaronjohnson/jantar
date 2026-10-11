@@ -31,7 +31,7 @@ defmodule Jantar.FocusTest do
   end
 
   test "every zoom key names a section the frame knows" do
-    for k <- ~c"cgmtpn",
+    for k <- ~c"ctgpmn",
         do: assert(Ticker.keys(<<k>>, @overview).focus in Frame.section_titles())
   end
 

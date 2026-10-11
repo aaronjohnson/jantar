@@ -17,8 +17,8 @@ defmodule Jantar.Display.Ticker do
 
   Keys on the dashboard's VT (`keys/2`): in the overview, 1 / 2 / 3 show
   live samples, the last day or the last 30 days. A section's letter
-  (c CPU, g GPU · NPU, m memory and storage, t thermals, p power,
-  n network) zooms in on it, full screen, where 1 / 2 / 3 show the last
+  (in screen order, left to right and top to bottom: c CPU, t thermals,
+  g GPU · NPU, p power, m memory and storage, n network) zooms in on it, full screen, where 1 / 2 / 3 show the last
   1, 5 or 30 minutes. Esc, 0, q or the same letter again go back to the
   overview, as it was.
 
@@ -320,12 +320,13 @@ defmodule Jantar.Display.Ticker do
 
   # ------------------------------------------------------------------ keys
 
+  # In screen order: left to right, top to bottom.
   @sections %{
     ?c => "CPU",
-    ?g => "GPU · NPU",
-    ?m => "MEMORY · STORAGE",
     ?t => "THERMALS",
+    ?g => "GPU · NPU",
     ?p => "POWER",
+    ?m => "MEMORY · STORAGE",
     ?n => "NETWORK"
   }
   @windows %{?1 => 60_000, ?2 => 300_000, ?3 => 1_800_000}
@@ -366,7 +367,7 @@ defmodule Jantar.Display.Ticker do
 
   defp label(%{focus: nil} = state) do
     scale = %{live: "live", day: "24 h", month: "30 days"}[state.scale]
-    "#{state.label} · #{scale}   1 live  2 day  3 month   zoom c g m t p n"
+    "#{state.label} · #{scale}   1 live  2 day  3 month   zoom c t g p m n"
   end
 
   defp label(state) do
