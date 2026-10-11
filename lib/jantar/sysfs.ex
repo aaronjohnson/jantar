@@ -13,7 +13,7 @@ defmodule Jantar.Sysfs do
 
   @doc "A file's contents, trimmed; nil if it can't be read."
   def read(root, path) do
-    case File.read(path(root, path)) do
+    case read_file(path(root, path)) do
       {:ok, text} -> String.trim(text)
       {:error, _} -> nil
     end
@@ -21,11 +21,16 @@ defmodule Jantar.Sysfs do
 
   @doc "A file's raw contents (e.g. NUL-separated /proc/<pid>/cmdline); nil if unreadable."
   def read_raw(root, path) do
-    case File.read(path(root, path)) do
+    case read_file(path(root, path)) do
       {:ok, bytes} -> bytes
       {:error, _} -> nil
     end
   end
+
+  # :raw reads the file in the calling process. File.read/1 goes through the
+  # VM's shared file server process, an extra message round trip per read,
+  # and jantar reads a few dozen small files a second.
+  defp read_file(path), do: :file.read_file(path, [:raw])
 
   @doc "A numeric file (\"42\", \"5180.0\") as a float; nil if missing or not a number."
   def number(root, path), do: Jantar.Core.number(read(root, path))

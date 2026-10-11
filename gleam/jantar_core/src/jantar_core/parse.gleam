@@ -18,13 +18,8 @@ import gleam/string
 
 /// Split text into whitespace-separated fields, like Python's str.split():
 /// "cpu  12\t34\n" -> ["cpu", "12", "34"].
-pub fn fields(line: String) -> List(String) {
-  line
-  |> string.replace("\t", " ")
-  |> string.replace("\n", " ")
-  |> string.split(" ")
-  |> list.filter(fn(s) { s != "" })
-}
+@external(erlang, "jantar_core_ffi", "fields")
+pub fn fields(line: String) -> List(String)
 
 /// A number as sysfs writes it: "42", "-3", "5180.0", with surrounding
 /// whitespace. Gleam's float.parse wants a decimal point, so try Int first.
@@ -41,9 +36,8 @@ pub fn integer(text: String) -> Result(Int, Nil) {
   number(text) |> result.map(float.truncate)
 }
 
-fn lines(text: String) -> List(String) {
-  string.split(text, "\n")
-}
+@external(erlang, "jantar_core_ffi", "lines")
+fn lines(text: String) -> List(String)
 
 // ------------------------------------------------------------------ /proc/stat
 
