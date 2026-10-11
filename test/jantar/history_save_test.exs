@@ -44,6 +44,10 @@ defmodule Jantar.HistorySaveTest do
     for {{t, _}, dt} <- Enum.zip(restored, [-3000, -2000, -1000]),
         do: assert(abs(t - (now + dt)) < 50)
 
+    # The time it was down is marked: same boot, so a service restart (11).
+    assert [{down, -11}, {up, 11}] = History.samples({:event, :restart}) |> Enum.take(-2)
+    assert down < up
+
     # The next push carries on the sequence.
     History.push(series, now, 4.0)
     assert History.last(series) == {now, 4.0}

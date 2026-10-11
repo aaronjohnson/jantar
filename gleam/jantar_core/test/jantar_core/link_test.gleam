@@ -44,3 +44,33 @@ pub fn iw_event_test() {
   |> should.equal(Ok(#("wlp0s20f3", OtherEvent)))
   parse.iw_event("garbage") |> should.equal(Error(Nil))
 }
+
+const if_inet6 =
+  "00000000000000000000000000000001 01 80 10 80       lo
+fe80000000000000398084ed9d14a5fa 02 40 20 80 wlp0s20f3
+"
+
+const if_inet6_global =
+  "fe80000000000000398084ed9d14a5fa 02 40 20 80 wlp0s20f3
+2001db8000000000398084ed9d14a5fa 02 40 00 00 wlp0s20f3
+"
+
+const ipv6_route_none =
+  "00000000000000000000000000000000 00 00000000000000000000000000000000 00 00000000000000000000000000000000 ffffffff 00000001 00000000 00200200       lo
+"
+
+const ipv6_route =
+  "00000000000000000000000000000000 00 00000000000000000000000000000000 00 fe800000000000000000000000000001 00000400 00000001 00000000 00000003 wlp0s20f3
+00000000000000000000000000000000 00 00000000000000000000000000000000 00 00000000000000000000000000000000 ffffffff 00000001 00000000 00200200       lo
+"
+
+pub fn ipv6_global_test() {
+  parse.ipv6_global(if_inet6, "wlp0s20f3") |> should.be_false
+  parse.ipv6_global(if_inet6_global, "wlp0s20f3") |> should.be_true
+}
+
+pub fn ipv6_default_route_test() {
+  // Only lo's reject route: no IPv6 default.
+  parse.ipv6_default_route(ipv6_route_none) |> should.equal(Error(Nil))
+  parse.ipv6_default_route(ipv6_route) |> should.equal(Ok("wlp0s20f3"))
+}

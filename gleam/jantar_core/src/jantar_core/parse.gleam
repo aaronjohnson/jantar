@@ -506,3 +506,41 @@ pub fn iw_event(line: String) -> Result(#(String, WifiEvent), Nil) {
   }
   #(iface, event)
 }
+
+/// Whether an interface has a global IPv6 address, from /proc/net/if_inet6
+/// (address, ifindex, prefix length, scope, flags, name; scope 00 is
+/// global, 20 link-local).
+pub fn ipv6_global(text: String, iface: String) -> Bool {
+  text
+  |> lines
+  |> list.any(fn(line) {
+    case fields(line) {
+      [_addr, _index, _plen, "00", _flags, name] -> name == iface
+      _ -> False
+    }
+  })
+}
+
+/// The interface with a usable IPv6 default route, from /proc/net/ipv6_route:
+/// destination ::/0, not on lo, and not a reject route (flag 0x0200).
+pub fn ipv6_default_route(text: String) -> Result(String, Nil) {
+  text
+  |> lines
+  |> list.find_map(fn(line) {
+    case fields(line) {
+      [dest, "00", _src, _splen, _hop, _metric, _ref, _use, flags, iface]
+        if iface != "lo"
+      -> {
+        let reject =
+          int.base_parse(flags, 16)
+          |> result.map(fn(f) { int.bitwise_and(f, 0x0200) != 0 })
+          |> result.unwrap(True)
+        case string.replace(dest, "0", "") == "" && !reject {
+          True -> Ok(iface)
+          False -> Error(Nil)
+        }
+      }
+      _ -> Error(Nil)
+    }
+  })
+}

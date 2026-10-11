@@ -34,6 +34,8 @@ defmodule Jantar.Frame.Demo do
       # The link went down for a minute 19 minutes ago, after a roam.
       {:link, :gateway} =>
         series(1_800_000, 2000, fn t -> if t in 660_000..720_000, do: 0, else: 1 end),
+      {:link, :ipv6} =>
+        series(1_800_000, 2000, fn t -> if t in 600_000..1_200_000, do: 1, else: 0 end),
       {:event, :wifi} => events([{1_320_000, 1}, {1_140_000, -1}, {1_110_000, 1}]),
       {:event, :link} => events([{1_135_000, -2}, {1_085_000, 2}])
     }
@@ -81,7 +83,7 @@ defmodule Jantar.Frame.Demo do
         bitrate_mbit: 1152.9,
         links: [%{id: 1, freq_mhz: 5180, active: false}, %{id: 2, freq_mhz: 6375, active: true}]
       },
-      link: %{route: true, gateway: true, iface: "wlan0", gateway_ip: "192.168.1.1"},
+      link: %{route: true, gateway: true, iface: "wlan0", gateway_ip: "192.168.1.1", ipv6: false},
       wifi_events: %{iface: "wlan0", bssid: "02:00:00:00:00:04"},
       ci_runner: %{
         installed: true,

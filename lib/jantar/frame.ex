@@ -31,7 +31,13 @@ defmodule Jantar.Frame do
   # ------------------------------------------------------------------ snapshot
 
   @series [:cpu, :clock, :mem, :rx, :tx, :temp, :power, :fan, :npu, :wifi] ++
-            [{:link, :gateway}, {:event, :wifi}, {:event, :link}]
+            [
+              {:link, :gateway},
+              {:link, :ipv6},
+              {:event, :wifi},
+              {:event, :link},
+              {:event, :restart}
+            ]
 
   # Cutovers drawn as radial lines on the network dials.
   @network_events [{:event, :wifi}, {:event, :link}]
@@ -454,8 +460,9 @@ defmodule Jantar.Frame do
     )
   end
 
-  # Is the link usable: a default route, and a gateway that answers ARP.
-  # Dots at 1 while up and on the inner ring while not; cutovers as lines.
+  # Is the link usable: a default route, and a gateway that answers ARP
+  # (the outer ring, green), and IPv6 (an inner ring at 0.7, cyan). Each sits
+  # on its ring while up and drops to the centre while down; cutovers as lines.
   defp link_panel(l, events, hist) do
     {state, tint} =
       cond do
@@ -464,10 +471,19 @@ defmodule Jantar.Frame do
         true -> {"up", :green}
       end
 
-    dial(:link, "LINK", :green, [{{:link, :gateway}, 1, :green, :green}], hist,
+    dial(
+      :link,
+      "LINK",
+      :green,
+      [{{:link, :gateway}, 1, :green, :green}, {{:link, :ipv6}, 0.7, :cyan, :cyan}],
+      hist,
       scale: {:linear, 0.0, 1.0},
       events: @network_events,
-      centre: [{state, tint, true}],
+      centre: [
+        {state, tint, true},
+        {if(l[:ipv6], do: "IPv6 up", else: "no IPv6"), if(l[:ipv6], do: :cyan, else: :muted),
+         false}
+      ],
       info: [
         {if(l.route, do: "via #{l.gateway_ip} on #{l.iface}", else: "no default route"), :fg},
         {if(events, do: "access point #{events.bssid}", else: "lines: green up, red down"),
@@ -511,7 +527,13 @@ defmodule Jantar.Frame do
              floor_idle_rows(hist.(name)[:rows], opts)}
         ),
       polar: :jantar_core@polar.dial(scale, opts[:mirrored] || false, window, period),
-      events: for(name <- opts[:events] || [], e <- hist.(name).samples, do: e),
+      # Every dial marks when jantar was down (a reboot or a restart).
+      events:
+        for(
+          name <- (opts[:events] || []) ++ [{:event, :restart}],
+          e <- hist.(name).samples,
+          do: e
+        ),
       guides: opts[:guides] || [],
       centre: opts[:centre] || [],
       info: opts[:info] || []
@@ -839,13 +861,22 @@ defmodule Jantar.Frame do
     )
   end
 
-  # Network events as radial lines across the dial at the moment they
-  # happened: green for coming up (Wi-Fi connected or roamed, route or
-  # gateway back), red for going down. They fade with age like samples.
+  # Events as radial lines across the dial at the moment they happened:
+  # network cutovers green for coming up (Wi-Fi connected or roamed, route,
+  # gateway or IPv6 back), red for going down; and on every dial, where
+  # jantar went down and came back, in the foreground colour for a reboot
+  # and dimmer for a service restart. They fade with age like samples.
   defp cutovers(%{c: c, u: u, now: now}, events, cx, cy, r0, r1, window, period) do
     for {t, code} <- events, is_number(code), now - t >= 0, now - t < window do
       a = :jantar_core@polar.angle(now - t, period)
-      col = if code > 0, do: c.green, else: c.red
+
+      col =
+        cond do
+          abs(code) == 10 -> c.fg
+          abs(code) == 11 -> c.dim
+          code > 0 -> c.green
+          true -> c.red
+        end
 
       DL.line(
         cx + r0 * :math.cos(a),

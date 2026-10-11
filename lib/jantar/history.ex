@@ -53,6 +53,10 @@ defmodule Jantar.History do
   @doc "The archive scales and their `{:spec, step_ms, keep_ms}`."
   def scales, do: @scales
 
+  # Restart marks (`{:event, :restart}`: -10/10 down and up around a reboot,
+  # -11/11 around a service restart) are kept this long.
+  @restart_window_ms 30 * 86_400_000
+
   # Series nobody declared get this window.
   @default_window_ms 30 * 60_000
 
@@ -174,6 +178,12 @@ defmodule Jantar.History do
     :ets.new(@state, [:set, :protected, :named_table, read_concurrency: true])
     :ets.new(@archive, [:ordered_set, :protected, :named_table, read_concurrency: true])
     file = save_file(Keyword.get(opts, :state_dir, Application.get_env(:jantar, :state_dir)))
+
+    :ets.insert(
+      @state,
+      {{:ring, {:event, :restart}}, :jantar_core@ring.new(@restart_window_ms, 1000)}
+    )
+
     if file, do: load(file)
     {:ok, %{max_points: Application.get_env(:jantar, :max_points, 7200), file: file}}
   end
@@ -198,6 +208,25 @@ defmodule Jantar.History do
   end
 
   def handle_call({:push, series, t, value}, _from, state) do
+    do_push(series, t, value, state)
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:put_sensor, name, status, current, t}, _from, state) do
+    :ets.insert(@state, {{:sensor, name}, status, current, t})
+    {:reply, :ok, state}
+  end
+
+  # Mark the time it was down: where the saved history ends, and now.
+  @impl true
+  def handle_info({:restart_marks, down_t, up_t, kind}, state) do
+    code = if kind == :reboot, do: 10, else: 11
+    do_push({:event, :restart}, down_t, -code, state)
+    do_push({:event, :restart}, up_t, code, state)
+    {:noreply, state}
+  end
+
+  defp do_push(series, t, value, state) do
     ring =
       case :ets.lookup(@state, {:ring, series}) do
         [{_, ring}] -> ring
@@ -221,13 +250,6 @@ defmodule Jantar.History do
     # Events are moments, not levels: nothing to average.
     if is_number(value) and not match?({:event, _}, series),
       do: consolidate(series, t + wall_offset(), value / 1)
-
-    {:reply, :ok, state}
-  end
-
-  def handle_call({:put_sensor, name, status, current, t}, _from, state) do
-    :ets.insert(@state, {{:sensor, name}, status, current, t})
-    {:reply, :ok, state}
   end
 
   # ------------------------------------------------------------------ archives
@@ -261,8 +283,9 @@ defmodule Jantar.History do
 
   # ------------------------------------------------------------------ saving
 
-  # 2 added the archives; files from version 1 still load.
-  @version 2
+  # 2 added the archives, 3 when it was saved and the boot it was saved in;
+  # older files still load.
+  @version 3
 
   defp save_file(nil), do: nil
   defp save_file(dir), do: Path.join(dir, "history.etf")
@@ -277,7 +300,8 @@ defmodule Jantar.History do
     samples = for {key, t, v} <- :ets.tab2list(@samples), do: {key, t + offset, v}
     opens = :ets.match_object(@state, {{:open, :_, :_}, :_})
     archive = :ets.tab2list(@archive)
-    data = :erlang.term_to_binary({@version, rings, samples, archive, opens}, [:compressed])
+    meta = %{saved_wall: System.system_time(:millisecond), boot_id: boot_id()}
+    data = :erlang.term_to_binary({@version, rings, samples, archive, opens, meta}, [:compressed])
     tmp = file <> ".tmp"
 
     with :ok <- File.mkdir_p(Path.dirname(file)),
@@ -291,7 +315,7 @@ defmodule Jantar.History do
 
   defp load(file) do
     with {:ok, data} <- File.read(file),
-         {version, rings, samples, archive, opens} when version in [1, 2] <-
+         {version, rings, samples, archive, opens, meta} when version in [1, 2, 3] <-
            upgrade(:erlang.binary_to_term(data, [:safe])) do
       offset = wall_offset()
       :ets.insert(@state, rings)
@@ -299,6 +323,11 @@ defmodule Jantar.History do
       :ets.insert(@archive, archive)
       :ets.insert(@samples, for({key, wall, v} <- samples, do: {key, wall - offset, v}))
       Logger.info("history: loaded #{length(samples)} samples from #{file}")
+
+      with %{saved_wall: saved} <- meta do
+        kind = if meta[:boot_id] == boot_id(), do: :restart, else: :reboot
+        send(self(), {:restart_marks, saved - offset, System.monotonic_time(:millisecond), kind})
+      end
     else
       {:error, :enoent} -> :ok
       other -> Logger.warning("history: ignoring #{file}: #{inspect(other, limit: 5)}")
@@ -307,6 +336,15 @@ defmodule Jantar.History do
     e -> Logger.warning("history: ignoring #{file}: #{Exception.message(e)}")
   end
 
-  defp upgrade({1, rings, samples}), do: {1, rings, samples, [], []}
+  defp upgrade({1, rings, samples}), do: {1, rings, samples, [], [], %{}}
+  defp upgrade({2, rings, samples, archive, opens}), do: {2, rings, samples, archive, opens, %{}}
   defp upgrade(other), do: other
+
+  # Changes with every boot: tells a reboot from a service restart.
+  defp boot_id do
+    case :file.read_file("/proc/sys/kernel/random/boot_id", [:raw]) do
+      {:ok, id} -> String.trim(id)
+      _ -> nil
+    end
+  end
 end
