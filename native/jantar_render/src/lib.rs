@@ -89,6 +89,13 @@ fn vt_reldisp(tty: String, arg: i32) -> NifResult<rustler::Atom> {
     Ok(rustler::types::atom::ok())
 }
 
+/// Make the DRM driver scan out the framebuffer again (see fb::fb_restore).
+#[rustler::nif(schedule = "DirtyIo")]
+fn fb_restore(fb: String) -> NifResult<rustler::Atom> {
+    fb::fb_restore(&fb)?;
+    Ok(rustler::types::atom::ok())
+}
+
 /// For the crash demo: a Rust panic. Rustler catches it at the NIF boundary
 /// and raises an Erlang error in the calling process; the VM carries on.
 #[rustler::nif]

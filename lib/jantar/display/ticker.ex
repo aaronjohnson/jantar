@@ -191,7 +191,12 @@ defmodule Jantar.Display.Ticker do
   defp show(state) do
     Logger.info("#{state.vt} is in the foreground: drawing")
     Mode.set(:visible, true)
-    if state.kd_mode, do: kd(state, true)
+
+    if state.kd_mode do
+      kd(state, true)
+      restore_fb(state)
+    end
+
     Render.invalidate(@backend)
     send(self(), :frame)
     %{state | visible: true}
@@ -246,6 +251,15 @@ defmodule Jantar.Display.Ticker do
         )
 
         %{state | kd_mode: false}
+    end
+  end
+
+  # Coming straight from a compositor, the display still shows its last
+  # frame: ask the driver to scan out the framebuffer again.
+  defp restore_fb(state) do
+    case Jantar.Render.Native.fb_restore(state.fb_path) do
+      ok when ok in [:ok, {:ok, :ok}] -> :ok
+      {:error, reason} -> Logger.warning("#{reason}; the screen may not show the dashboard")
     end
   end
 

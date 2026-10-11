@@ -125,3 +125,32 @@ pub fn vt_reldisp(tty: &str, arg: i32) -> Result<(), String> {
     let rc = unsafe { libc::ioctl(file.as_raw_fd(), VT_RELDISP as _, arg as libc::c_ulong) };
     if rc == 0 { Ok(()) } else { Err(format!("VT_RELDISP on {}: {}", tty, std::io::Error::last_os_error())) }
 }
+
+/// Make the DRM driver show the framebuffer again: FBIOPUT_VSCREENINFO with
+/// the current settings and FB_ACTIVATE_FORCE, which runs the driver's
+/// set_par and restores the fbdev mode (drm_fb_helper_set_par).
+///
+/// Needed when switching to our VT straight from a compositor: the display
+/// keeps scanning out the compositor's last frame until something restores
+/// fbdev, and with our VT in KD_GRAPHICS the console never does (it does when
+/// passing through a text VT, which is why going via Ctrl+Alt+F2 worked). It
+/// only takes effect while no DRM master holds the display.
+pub fn fb_restore(fb: &str) -> Result<(), String> {
+    const FBIOGET_VSCREENINFO: libc::c_ulong = 0x4600;
+    const FBIOPUT_VSCREENINFO: libc::c_ulong = 0x4601;
+    const FB_ACTIVATE_NOW: u32 = 0;
+    const FB_ACTIVATE_FORCE: u32 = 128;
+    // struct fb_var_screeninfo: 40 u32s; `activate` is the 22nd (8 geometry
+    // fields, 4 bitfield structs of 3, nonstd, then activate).
+    const ACTIVATE: usize = 21;
+    let file = OpenOptions::new().read(true).write(true).open(fb).map_err(|e| format!("{}: {}", fb, e))?;
+    let mut var = [0u32; 40];
+    // SAFETY: ioctls on an fd we own, with a buffer the size of the kernel's struct.
+    let rc = unsafe { libc::ioctl(file.as_raw_fd(), FBIOGET_VSCREENINFO as _, var.as_mut_ptr()) };
+    if rc != 0 {
+        return Err(format!("FBIOGET_VSCREENINFO on {}: {}", fb, std::io::Error::last_os_error()));
+    }
+    var[ACTIVATE] = FB_ACTIVATE_NOW | FB_ACTIVATE_FORCE;
+    let rc = unsafe { libc::ioctl(file.as_raw_fd(), FBIOPUT_VSCREENINFO as _, var.as_ptr()) };
+    if rc == 0 { Ok(()) } else { Err(format!("FBIOPUT_VSCREENINFO on {}: {}", fb, std::io::Error::last_os_error())) }
+}

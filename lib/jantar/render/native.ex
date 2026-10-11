@@ -24,6 +24,7 @@ defmodule Jantar.Render.Native do
   def kd_mode(_tty, _graphics?), do: err()
   def vt_process(_tty, _signal), do: err()
   def vt_reldisp(_tty, _arg), do: err()
+  def fb_restore(_fb), do: err()
   def panic_demo, do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
