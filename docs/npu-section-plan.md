@@ -30,6 +30,9 @@ building it:
   - `L2C_Riscv` is the cache traffic of the NPU's own control core (the
     firmware that schedules jobs): it follows job count, not size.
 
+`tools/npu-load.py` runs these phases (matrix flat out, ~45%, vector heavy,
+~5%, idle) for watching the dials.
+
 Still to check on the real service: the NPU keeps suspending when idle with
 jantar running (watch `runtime_suspended_time` grow).
 
