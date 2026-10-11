@@ -37,13 +37,15 @@ defmodule Jantar.Frame do
               {:event, :wifi},
               {:event, :link},
               {:event, :restart}
-            ]
+            ] ++ [{:swap, :in}, {:swap, :out}, {:disk, :read}, {:disk, :write}]
 
   # Cutovers drawn as radial lines on the network dials.
   @network_events [{:event, :wifi}, {:event, :link}]
   @sensors [
     :cpu,
     :memory,
+    :swap,
+    :disk,
     :net,
     :thermal,
     :fan,
@@ -157,7 +159,7 @@ defmodule Jantar.Frame do
     [
       {"CPU", :yellow, ["CPU", "LOAD"]},
       {"GPU · NPU", :orange, ["GPU", "NPU"]},
-      {"MEMORY", :violet, ["MEM"]}
+      {"MEMORY · STORAGE", :violet, ["MEM", "SWAP", "DISK"]}
     ],
     [
       {"THERMALS", :red, ["TEMP", "CLOCK", "FAN"]},
@@ -314,6 +316,44 @@ defmodule Jantar.Frame do
              :muted}
           ]
         ),
+      s[:swap] &&
+        dial(
+          :swap,
+          "SWAP",
+          :magenta,
+          [{{:swap, :in}, 1, :magenta, :magenta}, {{:swap, :out}, -1, :magenta, :magenta}],
+          hist,
+          scale: {:log, 0.0, 4.0},
+          mirrored: true,
+          guides: [10.0, 1000.0],
+          centre: [
+            {Format.kb(s.swap.used_kb), :magenta, true},
+            {"in #{round(s.swap.in || 0)}  out #{round(s.swap.out || 0)}", :muted, false}
+          ],
+          info: [
+            {"#{Format.kb(s.swap.used_kb)} of #{Format.kb(s.swap.total_kb)}", :fg},
+            {"pages/s, in above, out below", :muted}
+          ]
+        ),
+      s[:disk] &&
+        dial(
+          :disk,
+          "DISK",
+          :violet,
+          [{{:disk, :read}, 1, :violet, :orange}, {{:disk, :write}, -1, :violet, :orange}],
+          hist,
+          scale: {:log, 3.0, 9.0},
+          mirrored: true,
+          guides: [1.0e5, 1.0e7],
+          centre: [
+            {"r " <> Format.rate(s.disk.read), :violet, true},
+            {"w " <> Format.rate(s.disk.write), :orange, true}
+          ],
+          info: [
+            {disk_info(s.disk), :fg},
+            {top_writer(s.disk.top), :muted}
+          ]
+        ),
       s.npu &&
         dial(:npu, "NPU", :green, [{:npu, 1, :green, :green}], hist,
           scale: {:log, -3.0, 0.0},
@@ -459,6 +499,14 @@ defmodule Jantar.Frame do
       ]
     )
   end
+
+  defp disk_info(d) do
+    temp = if d.temp_c, do: "  #{round(d.temp_c)}°C", else: ""
+    d.device <> temp
+  end
+
+  defp top_writer(nil), do: "nothing writing"
+  defp top_writer({name, rate}), do: "top writer #{name} #{Format.rate(rate)}/s"
 
   # Is the link usable: a default route, and a gateway that answers ARP
   # (the outer ring, green), and IPv6 (an inner ring at 0.7, cyan). Each sits

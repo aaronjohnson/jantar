@@ -34,6 +34,7 @@ defmodule Jantar.Theme do
     orange: "#cb4b16",
     red: "#dc322f",
     violet: "#6c71c4",
+    magenta: "#d33682",
     blue: "#268bd2",
     cyan: "#2aa198",
     green: "#859900"

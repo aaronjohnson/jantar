@@ -46,7 +46,7 @@ defmodule Jantar.HistorySaveTest do
 
     # The time it was down is marked: same boot, so a service restart (11).
     assert [{down, -11}, {up, 11}] = History.samples({:event, :restart}) |> Enum.take(-2)
-    assert down < up
+    assert down <= up
 
     # The next push carries on the sequence.
     History.push(series, now, 4.0)

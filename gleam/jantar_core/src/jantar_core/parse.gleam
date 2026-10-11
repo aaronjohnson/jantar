@@ -544,3 +544,62 @@ pub fn ipv6_default_route(text: String) -> Result(String, Nil) {
     }
   })
 }
+
+// ------------------------------------------------------------------ storage
+
+/// Bytes read and written since boot by a block device, from /proc/diskstats
+/// (fields: major, minor, name, reads, merged, sectors read, ms, writes,
+/// merged, sectors written, ...; a sector is 512 bytes here).
+pub fn diskstats(text: String, device: String) -> Result(#(Int, Int), Nil) {
+  text
+  |> lines
+  |> list.find_map(fn(line) {
+    case fields(line) {
+      [_, _, name, _, _, read, _, _, _, written, ..] if name == device -> {
+        use r <- result.try(int.parse(read))
+        use w <- result.map(int.parse(written))
+        #(r * 512, w * 512)
+      }
+      _ -> Error(Nil)
+    }
+  })
+}
+
+/// Pages swapped in and out since boot, from /proc/vmstat.
+pub fn swap_pages(text: String) -> #(Int, Int) {
+  text
+  |> lines
+  |> list.fold(#(0, 0), fn(acc, line) {
+    case fields(line) {
+      ["pswpin", n] -> #(int.parse(n) |> result.unwrap(0), acc.1)
+      ["pswpout", n] -> #(acc.0, int.parse(n) |> result.unwrap(0))
+      _ -> acc
+    }
+  })
+}
+
+/// Bytes read and written by a cgroup on one device ("259:0"), from its
+/// io.stat ("259:0 rbytes=... wbytes=... rios=..."). 0, 0 if it hasn't.
+pub fn cgroup_io(text: String, device: String) -> #(Int, Int) {
+  text
+  |> lines
+  |> list.find_map(fn(line) {
+    case fields(line) {
+      [dev, ..stats] if dev == device -> {
+        let get = fn(key) {
+          stats
+          |> list.find_map(fn(kv) {
+            case string.split_once(kv, "=") {
+              Ok(#(k, v)) if k == key -> int.parse(v)
+              _ -> Error(Nil)
+            }
+          })
+          |> result.unwrap(0)
+        }
+        Ok(#(get("rbytes"), get("wbytes")))
+      }
+      _ -> Error(Nil)
+    }
+  })
+  |> result.unwrap(#(0, 0))
+}

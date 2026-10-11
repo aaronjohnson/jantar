@@ -12,6 +12,8 @@ defmodule Jantar.SensorSupervisor do
   @all [
     Jantar.Sensors.Cpu,
     Jantar.Sensors.Memory,
+    Jantar.Sensors.Swap,
+    Jantar.Sensors.Disk,
     Jantar.Sensors.Net,
     Jantar.Sensors.Thermal,
     Jantar.Sensors.Fan,
