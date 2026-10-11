@@ -41,11 +41,12 @@ defmodule Mix.Tasks.Hud.Png do
       Process.sleep(opts[:wait] || 3000)
     end
 
-    BeamHud.Theme.start_link(theme: theme || if(opts[:demo], do: :dark))
     snapshot = if opts[:demo], do: Frame.Demo.snapshot(), else: Frame.snapshot()
     label = Atom.to_string(backend)
     # The demo pins the header, so its frames are reproducible.
     fixed = if opts[:demo], do: [host: "hadron", clock: "12:00:00"], else: []
+    # The demo is dark unless asked; live frames follow the desktop (Theme).
+    fixed = fixed ++ [theme: theme || if(opts[:demo], do: :dark)]
 
     {build_us, {list, _meta}} =
       :timer.tc(fn ->

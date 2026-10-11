@@ -16,6 +16,14 @@ config :beam_hud, adaptive: false
 # reports visibility comes in a later milestone).
 config :beam_hud, hidden_on_battery_factor: 1
 
+# The dashboard (see BeamHud.Display for every option). `start: true` runs it
+# with the app; otherwise `mix hud.fb` does. The default console is tty12
+# (Ctrl+Alt+F12).
+#   config :beam_hud, :display, start: true, backend: :rust, tty: "/dev/tty12"
+
+# Colours: follow the desktop (gsettings) unless pinned:
+#   config :beam_hud, theme: :dark
+
 # Per-sensor settings override each sensor's defaults, e.g.
 #   config :beam_hud, BeamHud.Sensors.Cpu, interval: 500, adaptive: true
 

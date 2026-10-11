@@ -20,8 +20,16 @@ defmodule BeamHud.Render.Cairo do
 
   def start_link(opts \\ []), do: GenServer.start_link(__MODULE__, opts, name: opts[:name])
 
-  @doc "Ask the C program to segfault (needs `allow_crash: true`)."
-  def crash(server), do: GenServer.cast(server, :crash)
+  @doc """
+  Ask the C program to segfault (needs `allow_crash: true`). Returns
+  `:crashed` when it did (this backend process exits with it), or the
+  program's refusal.
+  """
+  def crash(server) do
+    GenServer.call(server, :crash)
+  catch
+    :exit, {{:port_exited, _status}, _call} -> :crashed
+  end
 
   @doc "Send any bytes and get them back: a protocol round trip."
   def echo(server, bytes), do: GenServer.call(server, {:echo, bytes})
@@ -71,13 +79,9 @@ defmodule BeamHud.Render.Cairo do
   end
 
   def handle_call({:echo, bytes}, _from, s), do: {:reply, request(s.port, [7, bytes]), s}
+  # Either the refusal comes back, or the port dies and request/2 exits.
+  def handle_call(:crash, _from, s), do: {:reply, request(s.port, <<8>>), s}
   def handle_call(:os_pid, _from, s), do: {:reply, Port.info(s.port, :os_pid) |> elem(1), s}
-
-  @impl true
-  def handle_cast(:crash, s) do
-    Port.command(s.port, <<8>>)
-    {:noreply, s}
-  end
 
   # The C program exited (or crashed): stop, so the supervisor restarts us
   # with a fresh port.
