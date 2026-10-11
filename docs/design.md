@@ -23,6 +23,7 @@ jantar/
 │   │   ├── polar.gleam        dial maths: age -> angle with laps, value -> radius
 │   │   │                      (linear/log, clamped, mirrored with a zero ring), fading
 │   │   └── adapt.gleam        adaptive sampling: next interval from recent values
+│   ├── src/jantar_core_ffi.erl  fast line/field splitting (binary:split) for the parsers
 │   └── test/jantar_core/         gleeunit tests (recorded samples + hud's own results)
 ├── lib/
 │   ├── jantar/
@@ -131,6 +132,14 @@ so faster sampling holds more points. Each series is capped at
 drop is decided in Gleam (`ring.trim`, which asks for timestamps through a
 callback); History applies it.
 
+**Across restarts**: with `config :jantar, state_dir:` set (the service sets
+it from systemd's `StateDirectory`, `/var/lib/jantar`), History saves both
+tables to `history.etf` when it stops and loads them when it starts, so a
+rebuild doesn't empty the dials. It writes only at shutdown, not as it goes.
+Timestamps are monotonic and the monotonic clock restarts with the VM, so
+they are saved as wall-clock time and converted back; the time it was down
+shows as a gap.
+
 ### Sampling intervals
 
 Defaults, measured on this machine. Each one can be changed with
@@ -163,9 +172,11 @@ flat. The interval stays between the configured interval and `:max_interval`
 
 **Mode** (`Jantar.Mode`, in `:persistent_term`): `visible` and
 `on_battery`. The battery sensor sets `on_battery`; the display's ticker sets
-`visible` from the foreground VT. While hidden and on battery, sensors stretch
-their intervals by `config :jantar, hidden_on_battery_factor:` (default 1:
-the mechanism is in place, the slowdown is off until chosen).
+`visible` from the foreground VT. While hidden, no sensor samples more often
+than `config :jantar, hidden_min_interval:` (1000 ms), so the 250 ms sensors
+wake a quarter as often and the history carries on, coarser, until the
+dashboard is shown again. Hidden on battery, intervals are also multiplied by
+`hidden_on_battery_factor:` (default 1).
 
 ### Dial maths (polar.gleam)
 
@@ -230,7 +241,10 @@ min..max band per few pixels of arc with a line through the means
 (`polar.buckets`). A 250 ms CPU or network series then reads as a trace, not
 a blur. Sparse series (wifi every 20 s, a 1 s clock over 15 laps) keep
 their dots. Lines break at gaps and at values a log scale can't show (an idle
-NPU). Frames are paced by the fastest sensor behind the panels on screen
+NPU), except on dials marked `idle_floor` (GPU and NPU): there, readings
+below the bottom of the log scale, such as an idle GPU, are drawn on the
+inner ring, so idle reads as a flat trace rather than scattered dots. Frames
+are paced by the fastest sensor behind the panels on screen
 (4 fps with the 250 ms CPU dial, at most 1 s apart), capped by `:max_fps` (4)
 and `:battery_max_fps` (2).
 
@@ -247,6 +261,14 @@ while it says `tty12`. On becoming visible it sets `Jantar.Mode` visible,
 switches the tty to `KD_GRAPHICS` (the console stops drawing text over us)
 and redraws everything. Sensors keep collecting regardless. If the backend
 dies, the ticker restarts after it and maps the framebuffer afresh.
+
+**Showing the framebuffer.** Switching to the VT straight from a Wayland
+compositor, the display keeps scanning out the compositor's last frame:
+nothing has told the DRM driver to show the fbdev framebuffer again, and with
+the VT in `KD_GRAPHICS` the console won't (it does when passing through a
+text VT). So on becoming visible the ticker also does `FBIOPUT_VSCREENINFO`
+with `FB_ACTIVATE_FORCE`, which runs the driver's `set_par` and restores the
+fbdev mode.
 
 **Switching VTs.** In the default, automatic switching mode the kernel
 *ignores* every switch away from a VT in `KD_GRAPHICS` (`change_console` in
