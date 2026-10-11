@@ -1,0 +1,206 @@
+# services.beam-hud: the dashboard on a VT of its own (Ctrl+Alt+F12 by
+# default), shown with no login. Imported by the flake as
+# nixosModules.default.
+self:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+
+let
+  cfg = config.services.beam-hud;
+  tty = "tty${toString cfg.tty}";
+  inherit (lib) mkOption mkEnableOption types;
+in
+{
+  options.services.beam-hud = {
+    enable = mkEnableOption "the beam-hud system dashboard on a text console";
+
+    package = mkOption {
+      type = types.package;
+      default = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      defaultText = lib.literalExpression "beam-hud.packages.\${system}.default";
+      description = "The beam-hud release to run.";
+    };
+
+    tty = mkOption {
+      type = types.ints.between 1 63;
+      default = 12;
+      description = ''
+        The virtual terminal to own and draw on (Ctrl+Alt+F<tty>). It must not
+        have a getty: logind starts them on tty1-6 only by default, and this
+        service conflicts with getty@/autovt@ on its tty.
+      '';
+    };
+
+    framebuffer = mkOption {
+      type = types.str;
+      default = "/dev/fb0";
+      description = "The framebuffer device to draw into.";
+    };
+
+    backend = mkOption {
+      type = types.enum [
+        "cairo"
+        "rust"
+      ];
+      default = "cairo";
+      description = ''
+        Renderer: "cairo" (a C program in its own process, so a crash in it
+        can't take the VM down, and the faster of the two) or "rust" (a NIF
+        inside the VM).
+      '';
+    };
+
+    theme = mkOption {
+      type = types.enum [
+        "dark"
+        "light"
+      ];
+      default = "dark";
+      description = "Solarized dark or light, unless themeFile is set.";
+    };
+
+    themeFile = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      example = "/run/beam-hud-theme";
+      description = ''
+        Follow a file containing "dark" or "light", read every minute. The
+        service can't ask a user's desktop (gsettings) itself; a user service
+        or the bar's sunrise/sunset switch can write this file instead.
+      '';
+    };
+
+    maxFps = mkOption {
+      type = types.ints.positive;
+      default = 4;
+      description = "Frame rate cap while the dashboard is on screen.";
+    };
+
+    batteryMaxFps = mkOption {
+      type = types.ints.positive;
+      default = 2;
+      description = "Frame rate cap on battery.";
+    };
+
+    extraGroups = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "github-runner" ];
+      description = ''
+        More groups for the service user, for sources that need them: e.g.
+        "github-runner" to read the CI runner's
+        /run/github-runner/<name>/ci-status.
+      '';
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    users.users.beam-hud = {
+      isSystemUser = true;
+      group = "beam-hud";
+      # video: /dev/fb0 is root:video 0660.
+      extraGroups = [ "video" ] ++ cfg.extraGroups;
+      description = "beam-hud dashboard";
+    };
+    users.groups.beam-hud = { };
+
+    # The dashboard's tty belongs to the service user (as a login's tty
+    # belongs to whoever logs in), so it can open it to set KD_GRAPHICS.
+    services.udev.extraRules = ''
+      SUBSYSTEM=="tty", KERNEL=="${tty}", OWNER="beam-hud", MODE="0600"
+    '';
+
+    systemd.services.beam-hud = {
+      description = "beam-hud dashboard on ${tty}";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "systemd-user-sessions.service" ];
+      conflicts = [
+        "getty@${tty}.service"
+        "autovt@${tty}.service"
+      ];
+
+      # Tools the wifi and CI sensors run.
+      path = [
+        pkgs.bash
+        pkgs.coreutils
+        pkgs.gawk
+        pkgs.iw
+        pkgs.networkmanager
+        config.systemd.package
+      ];
+
+      environment = {
+        BEAM_HUD_DISPLAY = "1";
+        BEAM_HUD_TTY = "/dev/${tty}";
+        BEAM_HUD_FB = cfg.framebuffer;
+        BEAM_HUD_BACKEND = cfg.backend;
+        BEAM_HUD_THEME = if cfg.themeFile != null then "file:${cfg.themeFile}" else cfg.theme;
+        BEAM_HUD_MAX_FPS = toString cfg.maxFps;
+        BEAM_HUD_BATTERY_MAX_FPS = toString cfg.batteryMaxFps;
+        RELEASE_TMP = "/run/beam-hud";
+        LANG = "C.UTF-8";
+      };
+
+      serviceConfig = {
+        User = "beam-hud";
+        Group = "beam-hud";
+        ExecStart = "${cfg.package}/bin/beam_hud start";
+        # The udev rule only applies when the tty device is (re)added, i.e.
+        # at boot; also hand it over now, so the first switch works.
+        ExecStartPre = "+${pkgs.coreutils}/bin/chown beam-hud /dev/${tty}";
+        # Whatever happened (stop, crash, kill), give the VT back its text.
+        ExecStopPost = "+${cfg.package.passthru.cairoPort}/bin/cairo_port --kd-mode text /dev/${tty}";
+        Restart = "on-failure";
+        RestartSec = 5;
+        RuntimeDirectory = "beam-hud";
+
+        # The tty becomes the service's controlling terminal, as with a
+        # getty. The kernel lets a process set KDSETMODE on its own
+        # controlling terminal, so no CAP_SYS_TTY_CONFIG is needed.
+        StandardInput = "tty";
+        StandardOutput = "journal";
+        StandardError = "journal";
+        TTYPath = "/dev/${tty}";
+        TTYReset = true;
+        TTYVHangup = true;
+
+        # Hardening. Sensors only read /proc and /sys; the wifi sensor talks
+        # to NetworkManager over D-Bus (AF_UNIX) and to nl80211 (AF_NETLINK).
+        NoNewPrivileges = true;
+        CapabilityBoundingSet = "";
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        PrivateTmp = true;
+        PrivateNetwork = false;
+        IPAddressDeny = "any";
+        RestrictAddressFamilies = [
+          "AF_UNIX"
+          "AF_NETLINK"
+        ];
+        DevicePolicy = "closed";
+        DeviceAllow = [
+          "${cfg.framebuffer} rw"
+          "/dev/${tty} rw"
+        ];
+        ProtectKernelTunables = true;
+        ProtectKernelModules = true;
+        ProtectKernelLogs = true;
+        ProtectControlGroups = true;
+        ProtectClock = true;
+        ProtectHostname = true;
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        LockPersonality = true;
+        SystemCallArchitectures = "native";
+        SystemCallFilter = [ "@system-service" ];
+        UMask = "0077";
+        # Not MemoryDenyWriteExecute: the BEAM's JIT writes machine code.
+      };
+    };
+  };
+}

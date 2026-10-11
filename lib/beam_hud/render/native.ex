@@ -7,7 +7,14 @@ defmodule BeamHud.Render.Native do
   Drawing runs on dirty CPU schedulers, so a 30 ms frame doesn't stall the
   normal schedulers that run every other process.
   """
-  use Rustler, otp_app: :beam_hud, crate: "hud_render", mode: :release
+  # The Nix package builds the crate in its own derivation and copies the .so
+  # into priv/native before `mix compile` (setting HUD_RENDER_NIF), so cargo
+  # isn't run here then.
+  use Rustler,
+    otp_app: :beam_hud,
+    crate: "hud_render",
+    mode: :release,
+    skip_compilation?: System.get_env("HUD_RENDER_NIF") != nil
 
   def new(_regular_ttf, _bold_ttf), do: err()
   def render_png(_renderer, _display_list, _path), do: err()

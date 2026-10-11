@@ -171,8 +171,13 @@ defmodule BeamHud.Display.Ticker do
     %{state | visible: false, frame_timer: nil}
   end
 
+  # KDSETMODE is done here, in the BEAM's own process, whatever the backend:
+  # the kernel allows it on a process's controlling terminal, and under the
+  # service the tty is the BEAM's. A Port runs in a session of its own
+  # (erl_child_setup calls setsid), so the cairo program couldn't, without
+  # CAP_SYS_TTY_CONFIG. The call is one ioctl in the Rust NIF.
   defp kd(state, graphics?) do
-    case Render.kd_mode(@backend, state.tty, graphics?) do
+    case BeamHud.Render.Native.kd_mode(state.tty, graphics?) do
       :ok ->
         :ok
 

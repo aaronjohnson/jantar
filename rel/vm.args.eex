@@ -1,0 +1,16 @@
+## beam-hud's VM flags.
+##
+## -noinput: the release never reads stdin (as a service its stdin is the tty).
+-noinput
+
+## Battery: by default an idle scheduler busy-waits ("spins") a short while
+## before sleeping, in case work arrives. For a dashboard that wakes a few
+## times a second, that spinning is wasted CPU and wakeups. Turn it off for
+## normal, dirty CPU and dirty I/O schedulers.
++sbwt none
++sbwtdcpu none
++sbwtdio none
+
+
+## File names are UTF-8 whatever the locale (a service may have none).
++fnu

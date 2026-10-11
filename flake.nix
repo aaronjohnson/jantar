@@ -11,6 +11,18 @@
       beam = pkgs.beam28Packages;
     in
     {
+      packages.${system} = rec {
+        beam-hud = pkgs.callPackage ./nix/package.nix { beamPackages = beam; };
+        default = beam-hud;
+      };
+
+      nixosModules.default = import ./nix/module.nix self;
+
+      checks.${system} = {
+        package = self.packages.${system}.default;
+        vm = import ./nix/vm-test.nix { inherit pkgs self; };
+      };
+
       devShells.${system}.default = pkgs.mkShell {
         packages = [
           beam.erlang

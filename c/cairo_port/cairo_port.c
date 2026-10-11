@@ -428,7 +428,21 @@ static void cmd_kd_mode(reader *r) {
     free(tty);
 }
 
+/* `cairo_port --kd-mode text|graphics /dev/ttyN`: set the console mode and
+ * exit. The service runs this after the dashboard stops (even after a
+ * crash), so the VT goes back to showing text. */
+static int kd_mode_cli(const char *mode, const char *tty) {
+    int fd = open(tty, O_RDWR);
+    if (fd < 0 || ioctl(fd, KDSETMODE, strcmp(mode, "graphics") == 0 ? KD_GRAPHICS : KD_TEXT)) {
+        fprintf(stderr, "KDSETMODE %s on %s: %s\n", mode, tty, strerror(errno));
+        return 1;
+    }
+    close(fd);
+    return 0;
+}
+
 int main(int argc, char **argv) {
+    if (argc == 4 && strcmp(argv[1], "--kd-mode") == 0) return kd_mode_cli(argv[2], argv[3]);
     int allow_crash = argc > 1 && strcmp(argv[1], "--allow-crash") == 0;
     for (;;) {
         uint8_t head[4];
