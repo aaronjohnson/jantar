@@ -231,7 +231,12 @@ defmodule Jantar.Sensor do
       max_ms = state.opts[:max_interval] || base * 8
       policy = Jantar.Core.policy(base, max(base, max_ms), state.opts[:noise] || 0.0)
       current = max(state.interval || base, base)
-      %{state | recent: recent, interval: :jantar_core@adapt.next_interval(recent, current, policy)}
+
+      %{
+        state
+        | recent: recent,
+          interval: :jantar_core@adapt.next_interval(recent, current, policy)
+      }
     else
       %{state | interval: base}
     end

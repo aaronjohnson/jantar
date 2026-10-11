@@ -27,7 +27,9 @@ defmodule Jantar.Sensors.Cpu do
       stat ->
         ids = :jantar_core@parse.cpu_ids(stat)
         max_mhz = Enum.map(ids, &((cpufreq(root, &1, "cpuinfo_max_freq") || 0) / 1000))
-        p_cores = :jantar_core@parse.cpu_list(Sysfs.read(root, "/sys/devices/cpu_core/cpus") || "")
+
+        p_cores =
+          :jantar_core@parse.cpu_list(Sysfs.read(root, "/sys/devices/cpu_core/cpus") || "")
 
         state = %{
           root: root,

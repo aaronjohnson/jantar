@@ -502,7 +502,8 @@ defmodule Jantar.Frame do
       ticks,
       DL.ring(cx, cy, r0, line_w, DL.mix(c.dim, c.bg, 0.25)),
       if(mirrored,
-        do: DL.ring(cx, cy, :jantar_core@polar.zero_ring(r0, r1), line_w, DL.mix(c.dim, c.bg, 0.6)),
+        do:
+          DL.ring(cx, cy, :jantar_core@polar.zero_ring(r0, r1), line_w, DL.mix(c.dim, c.bg, 0.6)),
         else: []
       ),
       DL.rects(List.flatten(guides)),
@@ -567,7 +568,8 @@ defmodule Jantar.Frame do
   # through the means, one polyline per lap.
   defp band(%{c: c, u: u, now: now}, polar, points, bucket_ms, geo, role, neg) do
     buckets =
-      for {:bucket, age, lo, hi, mean, _count} <- :jantar_core@polar.buckets(points, now, bucket_ms),
+      for {:bucket, age, lo, hi, mean, _count} <-
+            :jantar_core@polar.buckets(points, now, bucket_ms),
           :jantar_core@polar.visible(polar, lo) or :jantar_core@polar.visible(polar, hi) do
         a = :jantar_core@polar.angle(age, geo.period)
         col = color(c, role, neg, mean)

@@ -72,9 +72,7 @@ defmodule Jantar.DisplayTest do
 
     log =
       ExUnit.CaptureLog.capture_log(fn ->
-        start_supervised!(
-          {Jantar.Display, backend: :rust, fb: "/dev/fb0-nonexistent", size: nil}
-        )
+        start_supervised!({Jantar.Display, backend: :rust, fb: "/dev/fb0-nonexistent", size: nil})
 
         Process.sleep(300)
         assert %{fb_error: "/dev/fb0-nonexistent: " <> _, frames: 0} = Ticker.stats()

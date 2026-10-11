@@ -39,7 +39,10 @@ defmodule Jantar.Sensors.Battery do
   def sample(state, now) do
     status = read(state, "status") || ""
     current = num(state, "current_now")
-    watts = :jantar_core@rate.battery_watts(current || 0.0, num(state, "voltage_now") || 0.0, status)
+
+    watts =
+      :jantar_core@rate.battery_watts(current || 0.0, num(state, "voltage_now") || 0.0, status)
+
     Mode.set(:on_battery, status == "Discharging")
 
     state =
