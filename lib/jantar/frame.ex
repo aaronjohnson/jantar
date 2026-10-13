@@ -180,7 +180,9 @@ defmodule Jantar.Frame do
 
     panels = panels(snap)
     focus = if opts[:focus] in section_titles(), do: opts[:focus]
-    {placed, titles} = sections(panels, w, h, margin, head_h, foot_h, u, focus)
+    # Zoomed, a section may draw more than its dials: the NPU its pipeline.
+    extra_h = if focus == "NPU" and snap.sensors.npu, do: trunc(300 * u), else: 0
+    {placed, titles} = sections(panels, w, h, margin, head_h, foot_h + extra_h, u, focus)
     # Focused dials are about twice the size: so is the text around them.
     tile_ctx = if focus, do: %{ctx | u: u * @focus_text}, else: ctx
 
@@ -192,7 +194,19 @@ defmodule Jantar.Frame do
         else: []
       ),
       for({x, y, text, tint, tw} <- titles, do: section_title(ctx, x, y, text, tint, tw)),
-      for({panel, cx, y0, d} <- placed, do: tile(tile_ctx, panel, cx, y0, d))
+      for({panel, cx, y0, d} <- placed, do: tile(tile_ctx, panel, cx, y0, d)),
+      if(extra_h > 0,
+        do:
+          npu_diagram(
+            ctx,
+            snap.sensors,
+            margin,
+            h - foot_h - margin - extra_h,
+            w - 2 * margin,
+            extra_h
+          ),
+        else: []
+      )
     ]
 
     meta = %{
@@ -206,22 +220,24 @@ defmodule Jantar.Frame do
   # ------------------------------------------------------------------ sections
 
   # The panels grouped as in the Quickshell dropdown: titled sections in two
-  # columns, the dials of a section side by side.
+  # columns, the dials of a section side by side. A list is a row of sections
+  # sharing one line (the GPU's single dial beside the CPU's two).
   @columns [
     [
-      {"CPU", :yellow, ["CPU", "LOAD"]},
-      {"GPU · NPU", :orange, ["GPU", "NPU", "DMA"]},
+      [{"CPU", :yellow, ["CPU", "LOAD"]}, {"GPU", :orange, ["GPU"]}],
+      {"NPU", :cyan, ["NPU", "DMA"]},
       {"MEMORY · STORAGE", :violet, ["MEM", "SWAP", "DISK"]}
     ],
     [
       {"THERMALS", :red, ["TEMP", "CLOCK", "FAN"]},
       {"POWER", :green, ["POWER", "CHIP", "PORTS"]},
-      {"NETWORK", :blue, ["WIFI", "NET", "LINK"]}
+      {"LINKS", :blue, ["WIFI", "NET", "LINK"]}
     ]
   ]
 
   @doc "The section titles, overview order: what `build/2`'s `:focus` takes."
-  def section_titles, do: for(col <- @columns, {text, _, _} <- col, do: text)
+  def section_titles,
+    do: for(col <- @columns, row <- col, {text, _, _} <- List.wrap(row), do: text)
 
   # Lay the sections out: returns `{panel, centre x, top y, dial size}` for
   # each panel and `{x, y, text, tint, width}` for each section title. A section's
@@ -237,33 +253,44 @@ defmodule Jantar.Frame do
     avail = h - top - foot_h - margin
 
     layout =
-      case for(col <- @columns, {^focus, _, _} = sec <- col, do: sec) do
-        [sec] -> [[sec]]
-        [] -> @columns
+      case for(col <- @columns, row <- col, {^focus, _, _} = sec <- List.wrap(row), do: sec) do
+        [sec] -> [[[sec]]]
+        [] -> for(col <- @columns, do: Enum.map(col, &List.wrap/1))
       end
 
     col_w = (w - 2 * margin - gap * (length(layout) - 1)) / length(layout)
 
+    # Each row: its sections with the panels present (empty ones dropped).
     columns =
       for column <- layout do
-        for {text, tint, titles} <- column,
-            members = for(t <- titles, p = by_title[t], do: p),
-            members != [],
-            do: {text, tint, members}
+        for row <- column,
+            secs =
+              for(
+                {text, tint, titles} <- row,
+                members = for(t <- titles, p = by_title[t], do: p),
+                members != [],
+                do: {text, tint, members}
+              ),
+            secs != [],
+            do: secs
       end
 
     # Anything not in a section (a new sensor) goes at the end of the shorter
     # column, so it still shows (in the overview).
-    known = @columns |> Enum.flat_map(fn col -> Enum.flat_map(col, &elem(&1, 2)) end)
+    known =
+      for col <- @columns, row <- col, {_, _, titles} <- List.wrap(row), t <- titles, do: t
+
     extra = Enum.reject(panels, &(panel_title(&1) in known))
     [left, right] = if length(columns) == 2, do: columns, else: [[], []]
 
     columns =
       if extra == [] or length(columns) != 2,
         do: columns,
-        else: [left, right ++ [{"MORE", :fg, extra}]]
+        else: [left, right ++ [[{"MORE", :fg, extra}]]]
 
-    size = fn sec, cap -> min(col_w / length(elem(sec, 2)) - gap, cap) end
+    # A row's dials share the column's width, whichever section they're in.
+    count = fn row -> row |> Enum.map(&length(elem(&1, 2))) |> Enum.sum() end
+    size = fn row, cap -> min(col_w / count.(row) - gap, cap) end
 
     height = fn col, cap ->
       col |> Enum.map(&(title_h + size.(&1, cap) + text_h + gap)) |> Enum.sum()
@@ -280,29 +307,184 @@ defmodule Jantar.Frame do
       |> Enum.with_index()
       |> Enum.reduce({[], []}, fn {col, i}, acc ->
         x0 = margin + i * (col_w + gap)
-        # Spread spare height evenly between the sections.
+        # Spread spare height evenly between the rows.
         spare = max(0, avail - height.(col, cap)) / max(1, length(col))
         # A focused section sits in the middle of the screen.
         start = if focus, do: top + spare / 2, else: top
 
         {acc, _y} =
-          Enum.reduce(col, {acc, start}, fn {text, tint, members} = sec, {{placed, titles}, y} ->
-            d = trunc(size.(sec, cap))
-            share = col_w / length(members)
+          Enum.reduce(col, {acc, start}, fn row, {acc, y} ->
+            d = trunc(size.(row, cap))
+            share = col_w / count.(row)
 
-            here =
-              members
-              |> Enum.with_index()
-              |> Enum.map(fn {p, k} -> {p, trunc(x0 + share * (k + 0.5)), y + title_h, d} end)
+            # Sections in a row sit side by side, each as wide as its dials' share.
+            {acc, _x} =
+              Enum.reduce(row, {acc, x0}, fn {text, tint, members}, {{placed, titles}, x} ->
+                here =
+                  members
+                  |> Enum.with_index()
+                  |> Enum.map(fn {p, k} -> {p, trunc(x + share * (k + 0.5)), y + title_h, d} end)
 
-            {{placed ++ here, titles ++ [{trunc(x0), y, text, tint, col_w}]},
-             y + title_h + d + text_h + gap + spare}
+                sec_w = share * length(members)
+                # A gap between titles that share a row, so their hairlines don't meet.
+                tw = if x + sec_w < x0 + col_w - 1, do: sec_w - gap, else: sec_w
+                {{placed ++ here, titles ++ [{trunc(x), y, text, tint, tw}]}, x + sec_w}
+              end)
+
+            {acc, y + title_h + d + text_h + gap + spare}
           end)
 
         acc
       end)
 
     {placed, titles}
+  end
+
+  # ------------------------------------------------------------------ NPU pipeline
+
+  # How a job runs on the NPU, drawn under its dials when zoomed. The host
+  # rings a doorbell; the RISC-V control core sets up task lists and barriers;
+  # then DMA, the DPU tiles and the SHAVE cores release each other through
+  # hardware barriers, working out of CMX, the tiles' own SRAM. Each box glows
+  # with what jantar measures for it (the dial colours): DPU and SHAVE share
+  # "compute" (the counter can't split them), SHAVE also lights on its cache
+  # traffic, RAM and CMX have no counter.
+  defp npu_diagram(%{c: c, u: u}, sensors, x, y, w, _h) do
+    npu = sensors.npu
+    n = sensors[:npu_counters]
+    live = n != nil and n[:streaming] == true
+    # Readings only while streaming; fields may be missing otherwise.
+    v = if live, do: n, else: %{}
+    # A rate on a log scale, as a glow from 0 to 1.
+    glow = fn v, lo, hi ->
+      if live and v, do: clamp((:math.log10(max(v, 1)) - lo) / (hi - lo)), else: 0
+    end
+
+    compute = if v[:compute], do: clamp(v[:compute]), else: 0
+
+    cols = 5
+    gap = 22 * u
+    bw = (w - gap * (cols - 1)) / cols
+    bh = 74 * u
+    row_a = y + 30 * u
+    row_b = row_a + bh + 64 * u
+    bx = fn i -> x + i * (bw + gap) end
+
+    boxes = [
+      {0, row_a, "HOST CPU", "OpenVINO compiles the model", "to a fixed schedule", nil, :fg, 0},
+      {1, row_a, "QUEUE", "jobs in shared memory;", "a doorbell wakes the NPU",
+       if(npu.awake, do: "awake", else: "asleep"), :green, if(npu.awake, do: npu.load, else: 0)},
+      {2, row_a, "RISC-V", "control core: task lists,", "barriers, power, errors",
+       v[:riscv] && "cache #{Format.count(v[:riscv])}/s", :magenta, glow.(v[:riscv], 5.0, 8.0)},
+      {0, row_b, "SYSTEM RAM", "weights, inputs, results", "", nil, :fg, 0},
+      {1, row_b, "DMA", "two engines move tiles", "of data in and out",
+       v[:dma] && "#{Format.count(v[:dma])}/s", :green, glow.(v[:dma], 7.0, 10.0)},
+      {2, row_b, "CMX", "each tile's own SRAM;", "all work happens here", nil, :fg, 0},
+      {3, row_b, "DPU", "matrix: convolutions,", "matmuls, fused activations",
+       live && "compute #{Format.pct(compute)}", :blue, compute},
+      {4, row_b, "SHAVE", "vector DSPs: softmax,", "norms, the unfusable",
+       v[:shave] && "cache #{Format.count(v[:shave])}/s", :cyan,
+       max(compute * 0.5, glow.(v[:shave], 2.0, 5.0))}
+    ]
+
+    title = 13 * u
+    small = 11 * u
+
+    box_ops =
+      for {i, by, name, l1, l2, value, tint, g} <- boxes do
+        x0 = bx.(i)
+        col = Map.fetch!(c, tint)
+        edge = DL.mix(col, c.bg, if(g > 0, do: 0.9, else: 0.45))
+        body = DL.mix(col, c.bg, 0.06 + 0.32 * g)
+
+        [
+          DL.rrect(x0, by, x0 + bw, by + bh, 6 * u, edge),
+          DL.rrect(x0 + 1.5 * u, by + 1.5 * u, x0 + bw - 1.5 * u, by + bh - 1.5 * u, 5 * u, body),
+          DL.text(x0 + 10 * u, by + 9 * u, :left, :top, [{name, title, true, col}]),
+          DL.text(x0 + bw - 10 * u, by + 10 * u, :right, :top, [
+            {value || "", small, false, if(g > 0, do: col, else: c.dim)}
+          ]),
+          DL.text(x0 + 10 * u, by + 32 * u, :left, :top, [{l1, small, false, c.fg}]),
+          DL.text(x0 + 10 * u, by + 49 * u, :left, :top, [{l2, small, false, c.dim}])
+        ]
+      end
+
+    line_c = DL.mix(c.dim, c.bg, 0.8)
+    mid_a = row_a + bh / 2
+    mid_b = row_b + bh / 2
+    right = fn i -> bx.(i) + bw end
+
+    # Task lists: RISC-V down to a bus over the engines, a tick into each.
+    bus_y = row_b - 26 * u
+    risc_x = bx.(2) + bw / 2
+
+    arrows = [
+      arrow(right.(0), mid_a, bx.(1), mid_a, u, line_c, false),
+      arrow(right.(1), mid_a, bx.(2), mid_a, u, line_c, false),
+      arrow(right.(0), mid_b, bx.(1), mid_b, u, line_c, true),
+      arrow(right.(1), mid_b, bx.(2), mid_b, u, line_c, true),
+      arrow(right.(2), mid_b, bx.(3), mid_b, u, line_c, true),
+      arrow(right.(3), mid_b, bx.(4), mid_b, u, line_c, true),
+      DL.line(risc_x, row_a + bh, risc_x, bus_y, max(1.0, u), line_c),
+      DL.line(bx.(1) + bw / 2, bus_y, bx.(4) + bw / 2, bus_y, max(1.0, u), line_c),
+      for(
+        i <- [1, 3, 4],
+        do: arrow(bx.(i) + bw / 2, bus_y, bx.(i) + bw / 2, row_b, u, line_c, false)
+      ),
+      DL.text(risc_x + 8 * u, bus_y - 4 * u, :left, :bottom, [
+        {"task lists", small, false, c.dim}
+      ])
+    ]
+
+    # Barriers under the engines, and the fence back to the host.
+    bar_y = row_b + bh + 16 * u
+
+    notes = [
+      DL.rrect(bx.(1), bar_y, right.(4), bar_y + 22 * u, 4 * u, DL.mix(c.violet, c.bg, 0.18)),
+      DL.text(bx.(1) + 10 * u, bar_y + 11 * u, :left, :middle, [
+        {"BARRIERS", small, true, c.violet},
+        {"  hardware counters chain the tasks: each waits for its count, finishing releases the next",
+         small, false, c.fg}
+      ]),
+      DL.text(bx.(0) + bw / 2, bar_y + 11 * u, :center, :middle, [
+        {"fence → host: done", small, false, c.dim}
+      ]),
+      DL.text(right.(4), y + 6 * u, :right, :top, [
+        {if(live, do: "lit by the live counters", else: "counters read only while the NPU works"),
+         small, false, c.dim}
+      ]),
+      DL.text(x, y + 6 * u, :left, :top, [{"HOW A JOB RUNS", small, true, c.cyan}])
+    ]
+
+    [box_ops, arrows, notes]
+  end
+
+  defp clamp(v), do: v |> max(0.0) |> min(1.0)
+
+  # A line with an arrowhead at the end (and the start, if both).
+  defp arrow(x0, y0, x1, y1, u, rgb, both) do
+    head = fn {ax, ay}, {bx, by} ->
+      len = :math.sqrt((bx - ax) ** 2 + (by - ay) ** 2)
+      {dx, dy} = {(bx - ax) / len, (by - ay) / len}
+      s = 7 * u
+
+      [
+        {bx, by, bx - s * dx - s * 0.55 * dy, by - s * dy + s * 0.55 * dx, rgb},
+        {bx, by, bx - s * dx + s * 0.55 * dy, by - s * dy - s * 0.55 * dx, rgb}
+      ]
+    end
+
+    gap = 4 * u
+    len = :math.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
+    {dx, dy} = {(x1 - x0) / len, (y1 - y0) / len}
+    a = {x0 + gap * dx, y0 + gap * dy}
+    b = {x1 - gap * dx, y1 - gap * dy}
+
+    DL.segments(
+      [{elem(a, 0), elem(a, 1), elem(b, 0), elem(b, 1), rgb}] ++
+        head.(a, b) ++ if(both, do: head.(b, a), else: []),
+      max(1.0, u * 1.2)
+    )
   end
 
   defp panel_title(%{kind: :cpu}), do: "CPU"

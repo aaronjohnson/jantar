@@ -19,11 +19,11 @@ slow ones as dots. Radial lines mark Wi-Fi roams, link drops and restarts.
 
 | key | overview | zoomed in |
 | --- | --- | --- |
-| `c` `t` `g` `p` `m` `n` | zoom in on a section, in screen order | switch section |
+| `c` `g` `t` `n` `p` `m` `l` | zoom in on a section, in screen order (`n` the NPU, `l` links: wifi, traffic, route) | switch section |
 | `1` `2` `3` | live, last day, last 30 days | last 1, 5, 30 minutes |
 | `Esc` | | back to the overview |
 
-![the GPU · NPU section, zoomed in](docs/screenshots/zoom.png)
+![the NPU section zoomed in: its dials, and how a job runs, lit by the live counters](docs/screenshots/zoom.png)
 
 It follows Solarized light or dark, and shows whatever sensors a machine has.
 

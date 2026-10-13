@@ -7,9 +7,9 @@ defmodule Mix.Tasks.Jantar.Png do
       mix jantar.png --backend cairo --out cairo.png --size 2880x1920
       mix jantar.png --demo                           the deterministic demo snapshot
       mix jantar.png --theme light --repeat 20        time 20 renders, report the median
-      mix jantar.png --demo --focus NETWORK --window 1  one section full screen, last minute
+      mix jantar.png --demo --focus LINKS --window 1  one section full screen, last minute
 
-  `--focus` takes a section title (CPU, NETWORK, "GPU · NPU", ...) and
+  `--focus` takes a section title (CPU, LINKS, NPU, "MEMORY · STORAGE", ...) and
   `--window` minutes (default 5), as the dashboard's zoom keys do.
 
   Live data needs the sensors to have sampled a while; `--wait` ms (default
