@@ -25,6 +25,10 @@ defmodule Jantar.Frame do
   @r0_share 0.36
   # In the dense mode, one bucket per this many units of arc.
   @bucket_units 3.0
+  # Busy traces are smoothed over this share of their window (0.9 s of a
+  # minute, 4.5 s of five): the line follows the mean over it, the band
+  # spans its min and max, so peaks the line smooths away still show.
+  @smooth_share 0.015
   # Fewer samples per lap than (lap length in units / this) are drawn as dots.
   @dot_spacing_units 3.0
 
@@ -1426,10 +1430,51 @@ defmodule Jantar.Frame do
   end
 
   # Dense: per bucket a radial stroke from min to max (faint), and a line
-  # through the means, one polyline per lap.
+  # through the means, one polyline per lap; both over a rolling window
+  # (@smooth_share), so sensor jitter doesn't make the line jagged.
   defp band(%{now: now} = ctx, polar, points, bucket_ms, geo, role, neg) do
     raw = :jantar_core@polar.buckets(points, now, bucket_ms)
-    band_buckets(ctx, polar, raw, bucket_ms, geo, role, neg)
+    span = max(bucket_ms, round(geo.window * @smooth_share))
+    band_buckets(ctx, polar, smooth(raw, span), bucket_ms, geo, role, neg)
+  end
+
+  @doc """
+  Each bucket's mean over the buckets within `span_ms` around it (weighted
+  by their sample counts), and its band widened to their min and max.
+  Buckets are `{:bucket, age_ms, lo, hi, mean, count}`; ages and counts are
+  kept, so gaps stay gaps.
+  """
+  def smooth(buckets, span_ms) do
+    half = span_ms / 2
+    arr = List.to_tuple(buckets)
+    n = tuple_size(arr)
+
+    for i <- 0..(n - 1)//1 do
+      {:bucket, age, _, _, _, count} = elem(arr, i)
+
+      near =
+        Enum.concat(
+          walk(arr, i - 1, -1, age, half),
+          [elem(arr, i) | walk(arr, i + 1, 1, age, half)]
+        )
+
+      weight = near |> Enum.map(&elem(&1, 5)) |> Enum.sum()
+
+      mean =
+        if weight > 0,
+          do: Enum.reduce(near, 0.0, fn b, acc -> acc + elem(b, 4) * elem(b, 5) end) / weight,
+          else: elem(elem(arr, i), 4)
+
+      {:bucket, age, near |> Enum.map(&elem(&1, 2)) |> Enum.min(),
+       near |> Enum.map(&elem(&1, 3)) |> Enum.max(), mean, count}
+    end
+  end
+
+  # Neighbours of bucket `i` in one direction while within `half` ms of `age`.
+  defp walk(arr, i, step, age, half) do
+    if i < 0 or i >= tuple_size(arr) or abs(elem(elem(arr, i), 1) - age) > half,
+      do: [],
+      else: [elem(arr, i) | walk(arr, i + step, step, age, half)]
   end
 
   # An archive's rows are buckets already: one per step, with min, mean and
