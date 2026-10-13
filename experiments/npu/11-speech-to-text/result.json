@@ -1,0 +1,1040 @@
+{
+ "experiment": "11-speech-to-text",
+ "title": "Speech to text: Whisper's encoder on 30 s of audio",
+ "openvino": "2026.4.0-000--",
+ "seconds_per_trial": 1.0,
+ "trials": 3,
+ "turbo": true,
+ "results": [
+  {
+   "label": "Whisper tiny encoder, 30 s",
+   "trials": 3,
+   "latency_ms": 6.969,
+   "latency_range_ms": [
+    6.965,
+    6.975
+   ],
+   "latency_spread": 0.002,
+   "device_ms": 20.304,
+   "device_range_ms": [
+    20.296,
+    20.336
+   ],
+   "device_spread": 0.002,
+   "stable": true,
+   "per_second": 143.0,
+   "compile_ms": 10.2,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 11783.0,
+    "Shave": 8512.0,
+    "DMA": 9.0
+   },
+   "engines_share": {
+    "DPU": 0.58,
+    "Shave": 0.419,
+    "DMA": 0.0
+   },
+   "gflop": 36.938,
+   "tops": 5.3,
+   "device_tops": 1.82,
+   "by_trial": [
+    {
+     "device_ms": 20.336,
+     "latency_ms": 6.975,
+     "npu_mhz": 2050.0,
+     "compile_ms": 12.7
+    },
+    {
+     "device_ms": 20.296,
+     "latency_ms": 6.969,
+     "npu_mhz": 2050.0,
+     "compile_ms": 10.1
+    },
+    {
+     "device_ms": 20.304,
+     "latency_ms": 6.965,
+     "npu_mhz": 2050.0,
+     "compile_ms": 10.2
+    }
+   ],
+   "layers": [
+    {
+     "name": "Multiply_114",
+     "type": "Multiply",
+     "engine": "DMA",
+     "us": 0.0
+    },
+    {
+     "name": "Multiply_288",
+     "type": "Multiply",
+     "engine": "DMA",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_4",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 220.0
+    },
+    {
+     "name": "Parameter_1",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 9.0
+    },
+    {
+     "name": "Multiply_27",
+     "type": "Multiply",
+     "engine": "DMA",
+     "us": 0.0
+    },
+    {
+     "name": "Multiply_201",
+     "type": "Multiply",
+     "engine": "DMA",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_11",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 324.0
+    },
+    {
+     "name": "Add_21",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1148.0
+    },
+    {
+     "name": "MVN_24",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 102.0
+    },
+    {
+     "name": "Add_30",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 402.0
+    },
+    {
+     "name": "MatMul_33",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 50.0
+    },
+    {
+     "name": "MatMul_72",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 4954.0
+    },
+    {
+     "name": "MatMul_39",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 39.0
+    },
+    {
+     "name": "MatMul_45",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 748.0
+    },
+    {
+     "name": "MatMul_81",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 50.0
+    },
+    {
+     "name": "Add_85",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 25.0
+    },
+    {
+     "name": "MVN_88",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 84.0
+    },
+    {
+     "name": "Add_94",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 79.0
+    },
+    {
+     "name": "MatMul_97",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 182.0
+    },
+    {
+     "name": "MatMul_104",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 148.0
+    },
+    {
+     "name": "Add_108",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1164.0
+    },
+    {
+     "name": "MVN_111",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 101.0
+    },
+    {
+     "name": "Add_117",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 121.0
+    },
+    {
+     "name": "MatMul_120",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 47.0
+    },
+    {
+     "name": "MatMul_159",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 948.0
+    },
+    {
+     "name": "MatMul_126",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 32.0
+    },
+    {
+     "name": "MatMul_132",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 744.0
+    },
+    {
+     "name": "MatMul_168",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 48.0
+    },
+    {
+     "name": "Add_172",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 413.0
+    },
+    {
+     "name": "MVN_175",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 85.0
+    },
+    {
+     "name": "Add_181",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 100.0
+    },
+    {
+     "name": "MatMul_184",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 100.0
+    },
+    {
+     "name": "MatMul_191",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 154.0
+    },
+    {
+     "name": "Add_195",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 977.0
+    },
+    {
+     "name": "MVN_198",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 99.0
+    },
+    {
+     "name": "Add_204",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 107.0
+    },
+    {
+     "name": "MatMul_207",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 53.0
+    },
+    {
+     "name": "MatMul_246",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 918.0
+    },
+    {
+     "name": "MatMul_213",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 32.0
+    },
+    {
+     "name": "MatMul_219",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 719.0
+    },
+    {
+     "name": "MatMul_255",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 49.0
+    },
+    {
+     "name": "Add_259",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 377.0
+    },
+    {
+     "name": "MVN_262",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 85.0
+    },
+    {
+     "name": "Add_268",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 78.0
+    },
+    {
+     "name": "MatMul_271",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 112.0
+    },
+    {
+     "name": "MatMul_278",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 153.0
+    },
+    {
+     "name": "Add_282",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1032.0
+    },
+    {
+     "name": "MVN_285",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 99.0
+    },
+    {
+     "name": "Add_291",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 104.0
+    },
+    {
+     "name": "MatMul_294",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 50.0
+    },
+    {
+     "name": "MatMul_333",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 868.0
+    },
+    {
+     "name": "MatMul_300",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 31.0
+    },
+    {
+     "name": "MatMul_306",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 679.0
+    },
+    {
+     "name": "MatMul_342",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 49.0
+    },
+    {
+     "name": "Add_346",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 370.0
+    },
+    {
+     "name": "MVN_349",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 85.0
+    },
+    {
+     "name": "Add_355",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 79.0
+    },
+    {
+     "name": "MatMul_358",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 103.0
+    },
+    {
+     "name": "MatMul_365",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 149.0
+    },
+    {
+     "name": "Add_369",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 32.0
+    },
+    {
+     "name": "MVN_372",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 84.0
+    },
+    {
+     "name": "Add_378",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 110.0
+    }
+   ]
+  },
+  {
+   "label": "Whisper base encoder, 30 s",
+   "trials": 3,
+   "latency_ms": 13.983,
+   "latency_range_ms": [
+    13.971,
+    13.991
+   ],
+   "latency_spread": 0.001,
+   "device_ms": 50.429,
+   "device_range_ms": [
+    50.396,
+    50.533
+   ],
+   "device_spread": 0.003,
+   "stable": true,
+   "per_second": 71.4,
+   "compile_ms": 20.0,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 30559.0,
+    "Shave": 19861.0,
+    "DMA": 9.0
+   },
+   "engines_share": {
+    "DPU": 0.606,
+    "Shave": 0.394,
+    "DMA": 0.0
+   },
+   "gflop": 87.368,
+   "tops": 6.25,
+   "device_tops": 1.73,
+   "by_trial": [
+    {
+     "device_ms": 50.533,
+     "latency_ms": 13.983,
+     "npu_mhz": 2050.0,
+     "compile_ms": 18.1
+    },
+    {
+     "device_ms": 50.396,
+     "latency_ms": 13.971,
+     "npu_mhz": 2050.0,
+     "compile_ms": 20.0
+    },
+    {
+     "device_ms": 50.429,
+     "latency_ms": 13.991,
+     "npu_mhz": 2050.0,
+     "compile_ms": 20.1
+    }
+   ],
+   "layers": [
+    {
+     "name": "Multiply_493",
+     "type": "Multiply",
+     "engine": "DMA",
+     "us": 0.0
+    },
+    {
+     "name": "Multiply_667",
+     "type": "Multiply",
+     "engine": "DMA",
+     "us": 0.0
+    },
+    {
+     "name": "Multiply_841",
+     "type": "Multiply",
+     "engine": "DMA",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_383",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 253.0
+    },
+    {
+     "name": "Multiply_406",
+     "type": "Multiply",
+     "engine": "DMA",
+     "us": 0.0
+    },
+    {
+     "name": "Multiply_580",
+     "type": "Multiply",
+     "engine": "DMA",
+     "us": 0.0
+    },
+    {
+     "name": "Parameter_380",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 9.0
+    },
+    {
+     "name": "Multiply_754",
+     "type": "Multiply",
+     "engine": "DMA",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_390",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 666.0
+    },
+    {
+     "name": "Add_400",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1414.0
+    },
+    {
+     "name": "MVN_403",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 125.0
+    },
+    {
+     "name": "Add_409",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 911.0
+    },
+    {
+     "name": "MatMul_412",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 90.0
+    },
+    {
+     "name": "MatMul_451",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 11045.0
+    },
+    {
+     "name": "MatMul_418",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 55.0
+    },
+    {
+     "name": "MatMul_424",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 990.0
+    },
+    {
+     "name": "MatMul_460",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 108.0
+    },
+    {
+     "name": "Add_464",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 665.0
+    },
+    {
+     "name": "MVN_467",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 612.0
+    },
+    {
+     "name": "Add_473",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 113.0
+    },
+    {
+     "name": "MatMul_476",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 173.0
+    },
+    {
+     "name": "MatMul_483",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 313.0
+    },
+    {
+     "name": "Add_487",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1421.0
+    },
+    {
+     "name": "MVN_490",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 112.0
+    },
+    {
+     "name": "Add_496",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1229.0
+    },
+    {
+     "name": "MatMul_499",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 88.0
+    },
+    {
+     "name": "MatMul_538",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 1223.0
+    },
+    {
+     "name": "MatMul_505",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 46.0
+    },
+    {
+     "name": "MatMul_511",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 1006.0
+    },
+    {
+     "name": "MatMul_547",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 113.0
+    },
+    {
+     "name": "Add_551",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 633.0
+    },
+    {
+     "name": "MVN_554",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 104.0
+    },
+    {
+     "name": "Add_560",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 85.0
+    },
+    {
+     "name": "MatMul_563",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 173.0
+    },
+    {
+     "name": "MatMul_570",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 335.0
+    },
+    {
+     "name": "Add_574",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1390.0
+    },
+    {
+     "name": "MVN_577",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 115.0
+    },
+    {
+     "name": "Add_583",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1056.0
+    },
+    {
+     "name": "MatMul_586",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 89.0
+    },
+    {
+     "name": "MatMul_625",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 1195.0
+    },
+    {
+     "name": "MatMul_592",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 47.0
+    },
+    {
+     "name": "MatMul_598",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 976.0
+    },
+    {
+     "name": "MatMul_634",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 106.0
+    },
+    {
+     "name": "Add_638",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 643.0
+    },
+    {
+     "name": "MVN_641",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 577.0
+    },
+    {
+     "name": "Add_647",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 84.0
+    },
+    {
+     "name": "MatMul_650",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 174.0
+    },
+    {
+     "name": "MatMul_657",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 343.0
+    },
+    {
+     "name": "Add_661",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1468.0
+    },
+    {
+     "name": "MVN_664",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 112.0
+    },
+    {
+     "name": "Add_670",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1190.0
+    },
+    {
+     "name": "MatMul_673",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 87.0
+    },
+    {
+     "name": "MatMul_712",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 1183.0
+    },
+    {
+     "name": "MatMul_679",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 49.0
+    },
+    {
+     "name": "MatMul_685",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 985.0
+    },
+    {
+     "name": "MatMul_721",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 91.0
+    },
+    {
+     "name": "Add_725",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 638.0
+    },
+    {
+     "name": "MVN_728",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 92.0
+    },
+    {
+     "name": "Add_734",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 84.0
+    },
+    {
+     "name": "MatMul_737",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 163.0
+    },
+    {
+     "name": "MatMul_744",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 313.0
+    },
+    {
+     "name": "Add_748",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1330.0
+    },
+    {
+     "name": "MVN_751",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 112.0
+    },
+    {
+     "name": "Add_757",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1142.0
+    },
+    {
+     "name": "MatMul_799",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 1157.0
+    },
+    {
+     "name": "MatMul_760",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 79.0
+    },
+    {
+     "name": "MatMul_766",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 47.0
+    },
+    {
+     "name": "MatMul_772",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 926.0
+    },
+    {
+     "name": "MatMul_808",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 109.0
+    },
+    {
+     "name": "Add_812",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 654.0
+    },
+    {
+     "name": "MVN_815",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 623.0
+    },
+    {
+     "name": "Add_821",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 113.0
+    },
+    {
+     "name": "MatMul_824",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 173.0
+    },
+    {
+     "name": "MatMul_831",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 310.0
+    },
+    {
+     "name": "Add_835",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1361.0
+    },
+    {
+     "name": "MVN_838",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 112.0
+    },
+    {
+     "name": "Add_844",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 763.0
+    },
+    {
+     "name": "MatMul_847",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 89.0
+    },
+    {
+     "name": "MatMul_886",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 1163.0
+    },
+    {
+     "name": "MatMul_853",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 47.0
+    },
+    {
+     "name": "MatMul_859",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 949.0
+    },
+    {
+     "name": "MatMul_895",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 97.0
+    },
+    {
+     "name": "Add_899",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 638.0
+    },
+    {
+     "name": "MVN_902",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 93.0
+    },
+    {
+     "name": "MatMul_911",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 257.0
+    },
+    {
+     "name": "Add_908",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 84.0
+    },
+    {
+     "name": "MatMul_918",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 342.0
+    },
+    {
+     "name": "Add_922",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 34.0
+    },
+    {
+     "name": "MVN_925",
+     "type": "MVN",
+     "engine": "Shave",
+     "us": 106.0
+    },
+    {
+     "name": "Add_931",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 159.0
+    }
+   ]
+  }
+ ]
+}

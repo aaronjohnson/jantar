@@ -7,13 +7,13 @@ defmodule Jantar.Application do
       ├── Jantar.SensorSupervisor  (one_for_one) one process per sensor
       ├── Jantar.Theme             Solarized dark/light, following the desktop
       ├── Jantar.Display           only with `config :jantar, display: [start: true, ...]`
-      └── Jantar.NpuExamples       only with the npu-example command configured
+      └── Jantar.NpuExperiments       only with the npu-experiment command configured
 
 
   `rest_for_one`: if History restarts, its tables are gone, so the sensors
   after it restart too and declare their series again. A sensor crashing
   restarts alone, and its history survives in History's tables. The
-  example runner is last, so its crashing restarts nothing else.
+  experiment runner is last, so its crashing restarts nothing else.
   """
   use Application
 
@@ -27,7 +27,7 @@ defmodule Jantar.Application do
         Jantar.SensorSupervisor
       ] ++
         wifi_events() ++
-        [Jantar.Theme] ++ display() ++ npu_examples()
+        [Jantar.Theme] ++ display() ++ npu_experiments()
 
     Supervisor.start_link(children, strategy: :rest_for_one, name: Jantar.Supervisor)
   end
@@ -37,13 +37,13 @@ defmodule Jantar.Application do
     if Application.get_env(:jantar, :start_sensors, true), do: [Jantar.WifiEvents], else: []
   end
 
-  # The NPU example runner, if the command is there (the NixOS module sets it).
-  defp npu_examples do
-    opts = Application.get_env(:jantar, Jantar.NpuExamples, [])
+  # The NPU experiment runner, if the command is there (the NixOS module sets it).
+  defp npu_experiments do
+    opts = Application.get_env(:jantar, Jantar.NpuExperiments, [])
 
     if opts[:exe] && File.exists?(opts[:exe]),
       do: [
-        {Jantar.NpuExamples,
+        {Jantar.NpuExperiments,
          Keyword.put_new(opts, :state_dir, Application.get_env(:jantar, :state_dir))}
       ],
       else: []

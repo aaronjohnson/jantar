@@ -76,7 +76,7 @@ in
     themeFile = mkOption {
       type = types.nullOr types.str;
       default = null;
-      example = "/run/jantar-theme";
+      experiment = "/run/jantar-theme";
       description = ''
         Follow a file containing "dark" or "light", read every minute. The
         service can't ask a user's desktop (gsettings) itself; a user service
@@ -99,7 +99,7 @@ in
     usbBays = mkOption {
       type = types.attrsOf types.str;
       default = { };
-      example = {
+      experiment = {
         "3-3" = "port1";
       };
       description = ''
@@ -133,29 +133,29 @@ in
       '';
     };
 
-    npuExamples = mkOption {
+    npuExperiments = mkOption {
       type = types.bool;
       default = cfg.npuCounters;
       defaultText = lib.literalExpression "config.services.jantar.npuCounters";
       description = ''
-        Offer the NPU example library (examples/npu) on the NPU screen:
+        Offer the NPU experiment library (experiments/npu) on the NPU screen:
         j / k pick one, r runs it, x stops it. Each runs as its own process
         (Python and OpenVINO), one at a time, and is marked on the NPU dials.
         Needs the NPU device, like npuCounters.
       '';
     };
 
-    npuExamplePackage = mkOption {
+    npuExperimentPackage = mkOption {
       type = types.package;
-      default = self.packages.${pkgs.stdenv.hostPlatform.system}.npu-example;
-      defaultText = lib.literalExpression "jantar.packages.\${system}.npu-example";
-      description = "The npu-example command the runner starts.";
+      default = self.packages.${pkgs.stdenv.hostPlatform.system}.npu-experiment;
+      defaultText = lib.literalExpression "jantar.packages.\${system}.npu-experiment";
+      description = "The npu-experiment command the runner starts.";
     };
 
     extraGroups = mkOption {
       type = types.listOf types.str;
       default = [ ];
-      example = [ "github-runner" ];
+      experiment = [ "github-runner" ];
       description = ''
         More groups for the service user, for sources that need them: e.g.
         "github-runner" to read the CI runner's
@@ -213,8 +213,13 @@ in
         JANTAR_BATTERY_MAX_FPS = toString cfg.batteryMaxFps;
         JANTAR_NPU_COUNTERS = if cfg.npuCounters then "1" else "0";
       }
-      // lib.optionalAttrs cfg.npuExamples {
-        JANTAR_NPU_EXAMPLE = lib.getExe cfg.npuExamplePackage;
+      // lib.optionalAttrs cfg.npuExperiments {
+        JANTAR_NPU_EXPERIMENT = lib.getExe cfg.npuExperimentPackage;
+      }
+      // lib.optionalAttrs cfg.powercap {
+        # Energy counters, once a second, for the NPU experiments' joules per
+        # inference (coarse enough not to reopen the Platypus side channel).
+        JANTAR_ENERGY_FILE = "/run/jantar/energy.json";
       }
       // {
         JANTAR_USB_BAYS = lib.concatStringsSep "," (lib.mapAttrsToList (k: v: "${k}=${v}") cfg.usbBays);
@@ -268,7 +273,7 @@ in
           "${cfg.framebuffer} rw"
           "/dev/${tty} rw"
         ]
-        ++ lib.optional (cfg.npuCounters || cfg.npuExamples) "/dev/accel/accel0 rw";
+        ++ lib.optional (cfg.npuCounters || cfg.npuExperiments) "/dev/accel/accel0 rw";
         ProtectKernelTunables = true;
         ProtectKernelModules = true;
         ProtectKernelLogs = true;

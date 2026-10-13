@@ -61,8 +61,8 @@ defmodule Jantar.Frame.Demo do
         series(1_800_000, 2000, fn t -> if t in 600_000..1_200_000, do: 1, else: 0 end),
       {:event, :wifi} => events([{1_320_000, 1}, {1_140_000, -1}, {1_110_000, 1}]),
       {:event, :link} => events([{1_135_000, -2}, {1_085_000, 2}]),
-      # Two example runs: one finished, one still going.
-      {:event, :npu_example} => events([{200_000, 20}, {140_000, 21}, {40_000, 20}])
+      # Two experiment runs: one finished, one still going.
+      {:event, :npu_experiment} => events([{200_000, 20}, {140_000, 21}, {40_000, 20}])
     }
 
     kinds = List.duplicate("P", 4) ++ List.duplicate("E", 8) ++ List.duplicate("LP", 4)
@@ -92,11 +92,11 @@ defmodule Jantar.Frame.Demo do
       battery: %{status: "Charging", watts: 24.3, pct: 81, minutes: 38.0},
       charger: %{watts: 100.0, port: "/sys/class/power_supply/ucsi-source-psy-USBC000:002"},
       npu: %{load: 0.06, awake: true, mhz: 1400, max_mhz: 2050, mem_bytes: 68_714_496.0},
-      # The example library mid-run, with the engine splits measured on the
-      # real NPU (examples/npu/*/result.json).
-      npu_examples: %{
+      # The experiment library mid-run, with the engine splits measured on the
+      # real NPU (experiments/npu/*/result.json).
+      npu_experiments: %{
         state: :running,
-        example: "02-fusion",
+        experiment: "02-fusion",
         label: "conv + gelu (erf)",
         index: 8,
         count: 13,

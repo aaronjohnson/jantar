@@ -1,0 +1,915 @@
+{
+ "experiment": "13-object-detection",
+ "title": "Object detection: a YOLO-style network, SiLU vs mish",
+ "openvino": "2026.4.0-000--",
+ "seconds_per_trial": 1.0,
+ "trials": 3,
+ "turbo": true,
+ "results": [
+  {
+   "label": "YOLO-style, 640px, silu",
+   "trials": 3,
+   "latency_ms": 1.555,
+   "latency_range_ms": [
+    1.499,
+    1.556
+   ],
+   "latency_spread": 0.037,
+   "device_ms": 1.768,
+   "device_range_ms": [
+    1.764,
+    1.774
+   ],
+   "device_spread": 0.006,
+   "stable": true,
+   "per_second": 638.4,
+   "compile_ms": 6.3,
+   "npu_mhz": [
+    2050,
+    2050,
+    2050
+   ],
+   "engines_us": {
+    "DPU": 1704.0,
+    "DMA": 64.0
+   },
+   "engines_share": {
+    "DPU": 0.964,
+    "DMA": 0.036
+   },
+   "gflop": 8.294,
+   "tops": 5.33,
+   "device_tops": 4.69,
+   "by_trial": [
+    {
+     "device_ms": 1.774,
+     "latency_ms": 1.499,
+     "npu_mhz": 2050,
+     "compile_ms": 7.8
+    },
+    {
+     "device_ms": 1.768,
+     "latency_ms": 1.555,
+     "npu_mhz": 2050,
+     "compile_ms": 6.3
+    },
+    {
+     "device_ms": 1.764,
+     "latency_ms": 1.556,
+     "npu_mhz": 2050,
+     "compile_ms": 5.3
+    }
+   ],
+   "layers": [
+    {
+     "name": "Parameter_1",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 64.0
+    },
+    {
+     "name": "Convolution_4",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 112.0
+    },
+    {
+     "name": "Convolution_12",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 54.0
+    },
+    {
+     "name": "Convolution_20",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 86.0
+    },
+    {
+     "name": "Convolution_28",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 44.0
+    },
+    {
+     "name": "Convolution_37",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 16.0
+    },
+    {
+     "name": "Add_34",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 5.0
+    },
+    {
+     "name": "Convolution_45",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 36.0
+    },
+    {
+     "name": "Convolution_53",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 56.0
+    },
+    {
+     "name": "Convolution_62",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 78.0
+    },
+    {
+     "name": "Convolution_70",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 97.0
+    },
+    {
+     "name": "Convolution_79",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 99.0
+    },
+    {
+     "name": "Convolution_87",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 122.0
+    },
+    {
+     "name": "Add_59",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 2.0
+    },
+    {
+     "name": "Convolution_95",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 102.0
+    },
+    {
+     "name": "Add_76",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 2.0
+    },
+    {
+     "name": "Add_101",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1.0
+    },
+    {
+     "name": "Convolution_104",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 28.0
+    },
+    {
+     "name": "Convolution_112",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 54.0
+    },
+    {
+     "name": "Add_118",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 6.0
+    },
+    {
+     "name": "Convolution_121",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 23.0
+    },
+    {
+     "name": "Convolution_129",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 47.0
+    },
+    {
+     "name": "Convolution_137",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 40.0
+    },
+    {
+     "name": "Add_143",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 18.0
+    },
+    {
+     "name": "Convolution_146",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 29.0
+    },
+    {
+     "name": "Convolution_154",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 108.0
+    },
+    {
+     "name": "Convolution_162",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 158.0
+    },
+    {
+     "name": "Convolution_168",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 76.0
+    },
+    {
+     "name": "Convolution_176",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 31.0
+    },
+    {
+     "name": "Convolution_184",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 71.0
+    },
+    {
+     "name": "Convolution_190",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 35.0
+    },
+    {
+     "name": "Convolution_198",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 37.0
+    },
+    {
+     "name": "Convolution_206",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 31.0
+    }
+   ]
+  },
+  {
+   "label": "YOLO-style, 640px, mish",
+   "trials": 3,
+   "latency_ms": 2.105,
+   "latency_range_ms": [
+    2.102,
+    2.11
+   ],
+   "latency_spread": 0.003,
+   "device_ms": 2.739,
+   "device_range_ms": [
+    2.737,
+    2.785
+   ],
+   "device_spread": 0.018,
+   "stable": true,
+   "per_second": 474.0,
+   "compile_ms": 7.3,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 1834.0,
+    "Shave": 845.0,
+    "DMA": 60.0
+   },
+   "engines_share": {
+    "DPU": 0.67,
+    "Shave": 0.309,
+    "DMA": 0.022
+   },
+   "gflop": 8.294,
+   "tops": 3.94,
+   "device_tops": 3.03,
+   "by_trial": [
+    {
+     "device_ms": 2.737,
+     "latency_ms": 2.11,
+     "npu_mhz": 2050.0,
+     "compile_ms": 7.3
+    },
+    {
+     "device_ms": 2.785,
+     "latency_ms": 2.105,
+     "npu_mhz": 2050.0,
+     "compile_ms": 7.1
+    },
+    {
+     "device_ms": 2.739,
+     "latency_ms": 2.102,
+     "npu_mhz": 2050.0,
+     "compile_ms": 7.5
+    }
+   ],
+   "layers": [
+    {
+     "name": "Parameter_213",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 60.0
+    },
+    {
+     "name": "Convolution_216",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 136.0
+    },
+    {
+     "name": "Mish_220",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 75.0
+    },
+    {
+     "name": "Convolution_223",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 71.0
+    },
+    {
+     "name": "Mish_227",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 53.0
+    },
+    {
+     "name": "Convolution_230",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 64.0
+    },
+    {
+     "name": "Mish_234",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 67.0
+    },
+    {
+     "name": "Convolution_237",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 96.0
+    },
+    {
+     "name": "Add_242",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 97.0
+    },
+    {
+     "name": "Mish_241",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 92.0
+    },
+    {
+     "name": "Convolution_245",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 98.0
+    },
+    {
+     "name": "Mish_249",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 31.0
+    },
+    {
+     "name": "Convolution_252",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 56.0
+    },
+    {
+     "name": "Mish_256",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 37.0
+    },
+    {
+     "name": "Convolution_259",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 47.0
+    },
+    {
+     "name": "Add_264",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 37.0
+    },
+    {
+     "name": "Mish_263",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 32.0
+    },
+    {
+     "name": "Convolution_267",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 38.0
+    },
+    {
+     "name": "Mish_271",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 39.0
+    },
+    {
+     "name": "Convolution_274",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 48.0
+    },
+    {
+     "name": "Add_279",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 38.0
+    },
+    {
+     "name": "Mish_278",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 32.0
+    },
+    {
+     "name": "Convolution_282",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 26.0
+    },
+    {
+     "name": "Mish_286",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 17.0
+    },
+    {
+     "name": "Convolution_289",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 36.0
+    },
+    {
+     "name": "Mish_293",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 28.0
+    },
+    {
+     "name": "Convolution_296",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 38.0
+    },
+    {
+     "name": "Add_301",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 33.0
+    },
+    {
+     "name": "Mish_300",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 24.0
+    },
+    {
+     "name": "Convolution_304",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 33.0
+    },
+    {
+     "name": "Mish_308",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 28.0
+    },
+    {
+     "name": "Convolution_311",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 58.0
+    },
+    {
+     "name": "Add_316",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 36.0
+    },
+    {
+     "name": "Mish_315",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 24.0
+    },
+    {
+     "name": "Convolution_319",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 24.0
+    },
+    {
+     "name": "Mish_323",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 13.0
+    },
+    {
+     "name": "Convolution_326",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 33.0
+    },
+    {
+     "name": "Convolution_333",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 44.0
+    },
+    {
+     "name": "Mish_330",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 17.0
+    },
+    {
+     "name": "Mish_337",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 20.0
+    },
+    {
+     "name": "Add_338",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 12.0
+    },
+    {
+     "name": "Convolution_381",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 17.0
+    },
+    {
+     "name": "Convolution_388",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 14.0
+    },
+    {
+     "name": "Convolution_361",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 27.0
+    },
+    {
+     "name": "Mish_385",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 2.0
+    },
+    {
+     "name": "Convolution_341",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 43.0
+    },
+    {
+     "name": "Mish_392",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 1.0
+    },
+    {
+     "name": "Mish_365",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 36.0
+    },
+    {
+     "name": "Mish_345",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 27.0
+    },
+    {
+     "name": "Convolution_348",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 133.0
+    },
+    {
+     "name": "Convolution_355",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 161.0
+    },
+    {
+     "name": "Mish_352",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 119.0
+    },
+    {
+     "name": "Convolution_368",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 61.0
+    },
+    {
+     "name": "Convolution_375",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 103.0
+    },
+    {
+     "name": "Mish_372",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 31.0
+    },
+    {
+     "name": "Convolution_395",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 76.0
+    }
+   ]
+  },
+  {
+   "label": "YOLO-style, 320px, silu",
+   "trials": 3,
+   "latency_ms": 0.372,
+   "latency_range_ms": [
+    0.368,
+    0.374
+   ],
+   "latency_spread": 0.016,
+   "device_ms": 0.898,
+   "device_range_ms": [
+    0.894,
+    0.902
+   ],
+   "device_spread": 0.009,
+   "stable": true,
+   "per_second": 2539.2,
+   "compile_ms": 5.4,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 883.0,
+    "DMA": 15.0
+   },
+   "engines_share": {
+    "DPU": 0.983,
+    "DMA": 0.017
+   },
+   "gflop": 2.074,
+   "tops": 5.57,
+   "device_tops": 2.31,
+   "by_trial": [
+    {
+     "device_ms": 0.894,
+     "latency_ms": 0.372,
+     "npu_mhz": 2050.0,
+     "compile_ms": 5.1
+    },
+    {
+     "device_ms": 0.898,
+     "latency_ms": 0.374,
+     "npu_mhz": 2050.0,
+     "compile_ms": 5.8
+    },
+    {
+     "device_ms": 0.902,
+     "latency_ms": 0.368,
+     "npu_mhz": 2050.0,
+     "compile_ms": 5.4
+    }
+   ],
+   "layers": [
+    {
+     "name": "Parameter_402",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 15.0
+    },
+    {
+     "name": "Convolution_405",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 25.0
+    },
+    {
+     "name": "Convolution_413",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 28.0
+    },
+    {
+     "name": "Convolution_429",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 39.0
+    },
+    {
+     "name": "Convolution_446",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 49.0
+    },
+    {
+     "name": "Convolution_463",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 61.0
+    },
+    {
+     "name": "Convolution_471",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 65.0
+    },
+    {
+     "name": "Convolution_421",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 25.0
+    },
+    {
+     "name": "Convolution_438",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 35.0
+    },
+    {
+     "name": "Convolution_454",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 47.0
+    },
+    {
+     "name": "Convolution_496",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 69.0
+    },
+    {
+     "name": "Convolution_480",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 56.0
+    },
+    {
+     "name": "Convolution_488",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 46.0
+    },
+    {
+     "name": "Add_435",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 1.0
+    },
+    {
+     "name": "Add_460",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Add_477",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_505",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 19.0
+    },
+    {
+     "name": "Convolution_513",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 23.0
+    },
+    {
+     "name": "Add_502",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_522",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 26.0
+    },
+    {
+     "name": "Convolution_530",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 21.0
+    },
+    {
+     "name": "Add_519",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 30.0
+    },
+    {
+     "name": "Convolution_538",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 19.0
+    },
+    {
+     "name": "Add_544",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 12.0
+    },
+    {
+     "name": "Convolution_547",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 12.0
+    },
+    {
+     "name": "Convolution_555",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 12.0
+    },
+    {
+     "name": "Convolution_563",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 38.0
+    },
+    {
+     "name": "Convolution_569",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 24.0
+    },
+    {
+     "name": "Convolution_577",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 24.0
+    },
+    {
+     "name": "Convolution_585",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 15.0
+    },
+    {
+     "name": "Convolution_591",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 23.0
+    },
+    {
+     "name": "Convolution_599",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 21.0
+    },
+    {
+     "name": "Convolution_607",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 18.0
+    }
+   ]
+  }
+ ]
+}

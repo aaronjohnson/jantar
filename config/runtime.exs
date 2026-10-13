@@ -25,8 +25,12 @@ if config_env() == :prod do
   if env.("JANTAR_NPU_COUNTERS", "1") == "0",
     do: config(:jantar, Jantar.Sensors.NpuCounters, enabled: false)
 
-  # The NPU example library's command (the module's npuExamples).
-  if exe = System.get_env("JANTAR_NPU_EXAMPLE"), do: config(:jantar, Jantar.NpuExamples, exe: exe)
+  # Where the RAPL sensor publishes its energy counters (the module's powercap).
+  if file = System.get_env("JANTAR_ENERGY_FILE"), do: config(:jantar, energy_file: file)
+
+  # The NPU experiment library's command (the module's npuExperiments).
+  if exe = System.get_env("JANTAR_NPU_EXPERIMENT"),
+    do: config(:jantar, Jantar.NpuExperiments, exe: exe)
 
   # Theme: "dark" or "light" pins it; "file:/some/path" follows a file that
   # contains "dark" or "light" (checked every minute); unset asks gsettings.

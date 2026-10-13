@@ -90,7 +90,7 @@ defmodule Jantar.FocusTest do
     end
   end
 
-  test "on the NPU screen, j k pick an example, r and Enter run it, x stops" do
+  test "on the NPU screen, j k pick an experiment, r and Enter run it, x stops" do
     npu = %{@overview | focus: "NPU"} |> Map.put(:pick, 0)
     assert Ticker.keys("jj", npu).pick == 2
     assert Ticker.keys("k", npu).pick == -1
@@ -101,15 +101,15 @@ defmodule Jantar.FocusTest do
     assert Ticker.keys("jrx", %{@overview | focus: "CPU"}) == %{@overview | focus: "CPU"}
   end
 
-  test "the NPU screen lists the examples only when the runner is there" do
+  test "the NPU screen lists the experiments only when the runner is there" do
     snap = Frame.Demo.snapshot()
 
     {with_ex, _} =
       Frame.build(snap, width: 1440, height: 960, focus: "NPU", theme: :dark, pick: 7)
 
-    assert with_ex =~ "EXAMPLES" and with_ex =~ "running 8/13"
+    assert with_ex =~ "EXPERIMENTS" and with_ex =~ "running 8/13"
 
-    sensors = Map.put(snap.sensors, :npu_examples, nil)
+    sensors = Map.put(snap.sensors, :npu_experiments, nil)
 
     {without, _} =
       Frame.build(%{snap | sensors: sensors},
@@ -119,25 +119,25 @@ defmodule Jantar.FocusTest do
         theme: :dark
       )
 
-    refute without =~ "EXAMPLES"
+    refute without =~ "EXPERIMENTS"
 
     idle = %{
-      snap.sensors.npu_examples
+      snap.sensors.npu_experiments
       | state: :idle,
         catalogue: [],
         results: %{},
-        error: "no examples (exit 1)"
+        error: "no experiments (exit 1)"
     }
 
     {bin, _} =
-      Frame.build(%{snap | sensors: %{snap.sensors | npu_examples: idle}},
+      Frame.build(%{snap | sensors: %{snap.sensors | npu_experiments: idle}},
         width: 1440,
         height: 960,
         focus: "NPU",
         theme: :dark
       )
 
-    assert bin =~ "no examples"
+    assert bin =~ "no experiments"
   end
 
   test "a brief counter read error keeps the DMA dial, saying so" do
@@ -188,7 +188,7 @@ defmodule Jantar.FocusTest do
     end
   end
 
-  test "the examples list scrolls to the pick and says where it's used" do
+  test "the experiments list scrolls to the pick and says where it's used" do
     snap = Frame.Demo.snapshot()
 
     build = fn pick ->

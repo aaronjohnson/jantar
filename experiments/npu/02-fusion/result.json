@@ -1,0 +1,1013 @@
+{
+ "experiment": "02-fusion",
+ "title": "Fusion: which activations ride along with the DPU?",
+ "openvino": "2026.4.0-000--",
+ "seconds_per_trial": 1.0,
+ "trials": 5,
+ "turbo": true,
+ "results": [
+  {
+   "label": "conv + none",
+   "trials": 5,
+   "latency_ms": 0.218,
+   "latency_range_ms": [
+    0.216,
+    0.245
+   ],
+   "latency_spread": 0.076,
+   "device_ms": 0.055,
+   "device_range_ms": [
+    0.054,
+    0.057
+   ],
+   "device_spread": 0.055,
+   "stable": true,
+   "per_second": 4496.7,
+   "compile_ms": 1.8,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 55.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.231,
+   "tops": 1.06,
+   "device_tops": 4.2,
+   "by_trial": [
+    {
+     "device_ms": 0.057,
+     "latency_ms": 0.245,
+     "npu_mhz": 2050.0,
+     "compile_ms": 151.1
+    },
+    {
+     "device_ms": 0.057,
+     "latency_ms": 0.235,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    },
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.218,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    },
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.216,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.218,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_4",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 55.0
+    }
+   ]
+  },
+  {
+   "label": "conv + relu",
+   "trials": 5,
+   "latency_ms": 0.225,
+   "latency_range_ms": [
+    0.216,
+    0.239
+   ],
+   "latency_spread": 0.024,
+   "device_ms": 0.056,
+   "device_range_ms": [
+    0.054,
+    0.068
+   ],
+   "device_spread": 0.054,
+   "stable": true,
+   "per_second": 4355.4,
+   "compile_ms": 1.8,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 56.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.231,
+   "tops": 1.03,
+   "device_tops": 4.13,
+   "by_trial": [
+    {
+     "device_ms": 0.068,
+     "latency_ms": 0.239,
+     "npu_mhz": 2050.0,
+     "compile_ms": 127.9
+    },
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.225,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    },
+    {
+     "device_ms": 0.057,
+     "latency_ms": 0.22,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    },
+    {
+     "device_ms": 0.056,
+     "latency_ms": 0.226,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    },
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.216,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_9",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 56.0
+    }
+   ]
+  },
+  {
+   "label": "conv + clamp 0..6",
+   "trials": 5,
+   "latency_ms": 0.218,
+   "latency_range_ms": [
+    0.216,
+    0.23
+   ],
+   "latency_spread": 0.043,
+   "device_ms": 0.055,
+   "device_range_ms": [
+    0.054,
+    0.057
+   ],
+   "device_spread": 0.055,
+   "stable": true,
+   "per_second": 4298.8,
+   "compile_ms": 2.0,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 55.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.231,
+   "tops": 1.06,
+   "device_tops": 4.2,
+   "by_trial": [
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.226,
+     "npu_mhz": 2050.0,
+     "compile_ms": 135.6
+    },
+    {
+     "device_ms": 0.057,
+     "latency_ms": 0.23,
+     "npu_mhz": 2050.0,
+     "compile_ms": 2.0
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.217,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.6
+    },
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.216,
+     "npu_mhz": 2050.0,
+     "compile_ms": 2.0
+    },
+    {
+     "device_ms": 0.057,
+     "latency_ms": 0.218,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.9
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_15",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 55.0
+    }
+   ]
+  },
+  {
+   "label": "conv + leaky relu",
+   "trials": 5,
+   "latency_ms": 0.22,
+   "latency_range_ms": [
+    0.216,
+    0.246
+   ],
+   "latency_spread": 0.017,
+   "device_ms": 0.054,
+   "device_range_ms": [
+    0.054,
+    0.061
+   ],
+   "device_spread": 0.056,
+   "stable": true,
+   "per_second": 4318.2,
+   "compile_ms": 1.7,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 54.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.231,
+   "tops": 1.05,
+   "device_tops": 4.28,
+   "by_trial": [
+    {
+     "device_ms": 0.057,
+     "latency_ms": 0.246,
+     "npu_mhz": 2050.0,
+     "compile_ms": 124.0
+    },
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.222,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    },
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.22,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    },
+    {
+     "device_ms": 0.061,
+     "latency_ms": 0.219,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    },
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.216,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_21",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 54.0
+    }
+   ]
+  },
+  {
+   "label": "conv + hswish",
+   "trials": 5,
+   "latency_ms": 0.224,
+   "latency_range_ms": [
+    0.218,
+    0.229
+   ],
+   "latency_spread": 0.027,
+   "device_ms": 0.056,
+   "device_range_ms": [
+    0.055,
+    0.1
+   ],
+   "device_spread": 0.018,
+   "stable": true,
+   "per_second": 4375.6,
+   "compile_ms": 1.8,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 56.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.231,
+   "tops": 1.03,
+   "device_tops": 4.13,
+   "by_trial": [
+    {
+     "device_ms": 0.057,
+     "latency_ms": 0.221,
+     "npu_mhz": 2050.0,
+     "compile_ms": 137.2
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.228,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    },
+    {
+     "device_ms": 0.1,
+     "latency_ms": 0.224,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    },
+    {
+     "device_ms": 0.056,
+     "latency_ms": 0.218,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    },
+    {
+     "device_ms": 0.056,
+     "latency_ms": 0.229,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_29",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 56.0
+    }
+   ]
+  },
+  {
+   "label": "conv + sigmoid",
+   "trials": 5,
+   "latency_ms": 0.219,
+   "latency_range_ms": [
+    0.171,
+    0.227
+   ],
+   "latency_spread": 0.021,
+   "device_ms": 0.056,
+   "device_range_ms": [
+    0.051,
+    0.057
+   ],
+   "device_spread": 0.018,
+   "stable": true,
+   "per_second": 4444.2,
+   "compile_ms": 1.9,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 56.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.231,
+   "tops": 1.06,
+   "device_tops": 4.13,
+   "by_trial": [
+    {
+     "device_ms": 0.057,
+     "latency_ms": 0.227,
+     "npu_mhz": 2050.0,
+     "compile_ms": 154.7
+    },
+    {
+     "device_ms": 0.056,
+     "latency_ms": 0.219,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.9
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.216,
+     "npu_mhz": 2050.0,
+     "compile_ms": 2.9
+    },
+    {
+     "device_ms": 0.056,
+     "latency_ms": 0.221,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    },
+    {
+     "device_ms": 0.051,
+     "latency_ms": 0.171,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_35",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 56.0
+    }
+   ]
+  },
+  {
+   "label": "conv + swish",
+   "trials": 5,
+   "latency_ms": 0.217,
+   "latency_range_ms": [
+    0.215,
+    0.234
+   ],
+   "latency_spread": 0.034,
+   "device_ms": 0.055,
+   "device_range_ms": [
+    0.054,
+    0.064
+   ],
+   "device_spread": 0.073,
+   "stable": true,
+   "per_second": 4339.4,
+   "compile_ms": 1.9,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 55.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.231,
+   "tops": 1.06,
+   "device_tops": 4.2,
+   "by_trial": [
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.224,
+     "npu_mhz": 2050.0,
+     "compile_ms": 140.6
+    },
+    {
+     "device_ms": 0.064,
+     "latency_ms": 0.234,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.217,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.9
+    },
+    {
+     "device_ms": 0.058,
+     "latency_ms": 0.217,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.9
+    },
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.215,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.4
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_41",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 55.0
+    }
+   ]
+  },
+  {
+   "label": "conv + gelu (erf)",
+   "trials": 5,
+   "latency_ms": 0.22,
+   "latency_range_ms": [
+    0.218,
+    0.232
+   ],
+   "latency_spread": 0.017,
+   "device_ms": 0.056,
+   "device_range_ms": [
+    0.055,
+    0.057
+   ],
+   "device_spread": 0.036,
+   "stable": true,
+   "per_second": 4392.3,
+   "compile_ms": 1.8,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 56.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.231,
+   "tops": 1.05,
+   "device_tops": 4.13,
+   "by_trial": [
+    {
+     "device_ms": 0.057,
+     "latency_ms": 0.22,
+     "npu_mhz": 2050.0,
+     "compile_ms": 135.4
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.223,
+     "npu_mhz": 2050.0,
+     "compile_ms": 2.3
+    },
+    {
+     "device_ms": 0.056,
+     "latency_ms": 0.22,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.6
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.218,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    },
+    {
+     "device_ms": 0.057,
+     "latency_ms": 0.232,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_48",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 56.0
+    }
+   ]
+  },
+  {
+   "label": "conv + gelu (tanh)",
+   "trials": 5,
+   "latency_ms": 0.22,
+   "latency_range_ms": [
+    0.218,
+    0.224
+   ],
+   "latency_spread": 0.017,
+   "device_ms": 0.058,
+   "device_range_ms": [
+    0.055,
+    0.059
+   ],
+   "device_spread": 0.034,
+   "stable": true,
+   "per_second": 4357.4,
+   "compile_ms": 1.7,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 58.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.231,
+   "tops": 1.05,
+   "device_tops": 3.99,
+   "by_trial": [
+    {
+     "device_ms": 0.058,
+     "latency_ms": 0.224,
+     "npu_mhz": 2050.0,
+     "compile_ms": 158.8
+    },
+    {
+     "device_ms": 0.058,
+     "latency_ms": 0.222,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    },
+    {
+     "device_ms": 0.059,
+     "latency_ms": 0.218,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.6
+    },
+    {
+     "device_ms": 0.056,
+     "latency_ms": 0.22,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.218,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_54",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 58.0
+    }
+   ]
+  },
+  {
+   "label": "conv + tanh",
+   "trials": 5,
+   "latency_ms": 0.217,
+   "latency_range_ms": [
+    0.216,
+    0.221
+   ],
+   "latency_spread": 0.012,
+   "device_ms": 0.055,
+   "device_range_ms": [
+    0.055,
+    0.057
+   ],
+   "device_spread": 0.018,
+   "stable": true,
+   "per_second": 4527.8,
+   "compile_ms": 1.8,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 55.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.231,
+   "tops": 1.07,
+   "device_tops": 4.2,
+   "by_trial": [
+    {
+     "device_ms": 0.057,
+     "latency_ms": 0.221,
+     "npu_mhz": 2050.0,
+     "compile_ms": 153.1
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.219,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.216,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.217,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    },
+    {
+     "device_ms": 0.056,
+     "latency_ms": 0.216,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_60",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 55.0
+    }
+   ]
+  },
+  {
+   "label": "conv + mish",
+   "trials": 5,
+   "latency_ms": 0.305,
+   "latency_range_ms": [
+    0.295,
+    0.311
+   ],
+   "latency_spread": 0.008,
+   "device_ms": 0.167,
+   "device_range_ms": [
+    0.165,
+    0.17
+   ],
+   "device_spread": 0.018,
+   "stable": true,
+   "per_second": 3143.4,
+   "compile_ms": 3.1,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "Shave": 118.0,
+    "DPU": 49.0
+   },
+   "engines_share": {
+    "Shave": 0.707,
+    "DPU": 0.293
+   },
+   "gflop": 0.231,
+   "tops": 0.76,
+   "device_tops": 1.38,
+   "by_trial": [
+    {
+     "device_ms": 0.169,
+     "latency_ms": 0.311,
+     "npu_mhz": 2050.0,
+     "compile_ms": 205.5
+    },
+    {
+     "device_ms": 0.167,
+     "latency_ms": 0.303,
+     "npu_mhz": 2050.0,
+     "compile_ms": 3.1
+    },
+    {
+     "device_ms": 0.165,
+     "latency_ms": 0.295,
+     "npu_mhz": 2050.0,
+     "compile_ms": 3.1
+    },
+    {
+     "device_ms": 0.17,
+     "latency_ms": 0.305,
+     "npu_mhz": 2050.0,
+     "compile_ms": 3.0
+    },
+    {
+     "device_ms": 0.166,
+     "latency_ms": 0.305,
+     "npu_mhz": 2050.0,
+     "compile_ms": 3.2
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_66",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 49.0
+    },
+    {
+     "name": "Mish_67",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 63.0
+    },
+    {
+     "name": "Result_68",
+     "type": "Result",
+     "engine": "Shave",
+     "us": 55.0
+    }
+   ]
+  },
+  {
+   "label": "conv + elu",
+   "trials": 5,
+   "latency_ms": 0.305,
+   "latency_range_ms": [
+    0.296,
+    0.315
+   ],
+   "latency_spread": 0.015,
+   "device_ms": 0.165,
+   "device_range_ms": [
+    0.165,
+    0.182
+   ],
+   "device_spread": 0.012,
+   "stable": true,
+   "per_second": 3174.8,
+   "compile_ms": 3.1,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "Shave": 116.0,
+    "DPU": 49.0
+   },
+   "engines_share": {
+    "Shave": 0.703,
+    "DPU": 0.297
+   },
+   "gflop": 0.231,
+   "tops": 0.76,
+   "device_tops": 1.4,
+   "by_trial": [
+    {
+     "device_ms": 0.182,
+     "latency_ms": 0.315,
+     "npu_mhz": 2050.0,
+     "compile_ms": 185.1
+    },
+    {
+     "device_ms": 0.167,
+     "latency_ms": 0.305,
+     "npu_mhz": 2050.0,
+     "compile_ms": 3.0
+    },
+    {
+     "device_ms": 0.165,
+     "latency_ms": 0.296,
+     "npu_mhz": 2050.0,
+     "compile_ms": 3.1
+    },
+    {
+     "device_ms": 0.165,
+     "latency_ms": 0.309,
+     "npu_mhz": 2050.0,
+     "compile_ms": 3.2
+    },
+    {
+     "device_ms": 0.165,
+     "latency_ms": 0.304,
+     "npu_mhz": 2050.0,
+     "compile_ms": 2.9
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_72",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 49.0
+    },
+    {
+     "name": "Elu_73",
+     "type": "Elu",
+     "engine": "Shave",
+     "us": 63.0
+    },
+    {
+     "name": "Result_74",
+     "type": "Result",
+     "engine": "Shave",
+     "us": 53.0
+    }
+   ]
+  },
+  {
+   "label": "conv + exp",
+   "trials": 5,
+   "latency_ms": 0.22,
+   "latency_range_ms": [
+    0.217,
+    0.223
+   ],
+   "latency_spread": 0.024,
+   "device_ms": 0.055,
+   "device_range_ms": [
+    0.054,
+    0.057
+   ],
+   "device_spread": 0.018,
+   "stable": true,
+   "per_second": 4482.1,
+   "compile_ms": 1.7,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 55.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.231,
+   "tops": 1.05,
+   "device_tops": 4.2,
+   "by_trial": [
+    {
+     "device_ms": 0.057,
+     "latency_ms": 0.223,
+     "npu_mhz": 2050.0,
+     "compile_ms": 131.3
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.223,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.6
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.217,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.6
+    },
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.218,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    },
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.22,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.7
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_78",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 55.0
+    }
+   ]
+  }
+ ]
+}

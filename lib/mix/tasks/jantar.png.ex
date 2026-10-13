@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Jantar.Png do
       mix jantar.png --theme light --repeat 20        time 20 renders, report the median
       mix jantar.png --demo --focus LINKS --window 1  one section full screen, last minute
 
-  `--pick N` marks the Nth NPU example (from 0) on the NPU screen.
+  `--pick N` marks the Nth NPU experiment (from 0) on the NPU screen.
   `--focus` takes a section title (CPU, LINKS, NPU, "MEMORY · STORAGE", ...) and
   `--window` minutes (default 5), as the dashboard's zoom keys do.
 

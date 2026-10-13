@@ -30,7 +30,7 @@ Each dial is a clock face for one measurement. Time runs clockwise from the
 top, one lap per period, and the further from the centre, the higher the
 value. The newest reading is the bright dot at the top; older laps fade, so
 you can see at a glance whether something is steady, rising or bursting.
-Radial lines mark events: Wi-Fi roams, link drops, restarts and NPU example
+Radial lines mark events: Wi-Fi roams, link drops, restarts and NPU experiment
 runs. The legend under each dial names its traces in their own colours.
 
 ## Keys
@@ -39,7 +39,7 @@ runs. The legend under each dial names its traces in their own colours.
 | --- | --- | --- |
 | `c` `g` `t` `n` `p` `m` `l` | zoom in on a section, in screen order (`n` the NPU, `l` links) | switch section |
 | `1` `2` `3` | live, last day, last 30 days | last 1, 5, 30 minutes |
-| `j` `k` `r` `x` | | on the NPU screen: pick an example, run it (or queue it behind the one running), stop it and clear the queue |
+| `j` `k` `r` `x` | | on the NPU screen: pick an experiment, run it (or queue it behind the one running), stop it and clear the queue |
 | `Esc` | | back to the overview |
 
 It follows the desktop's light or dark theme (Solarized).
@@ -48,26 +48,26 @@ It follows the desktop's light or dark theme (Solarized).
 
 ## Learning how the NPU works
 
-![the NPU section zoomed in: its dials, how a job runs, and the example library](docs/screenshots/zoom.png)
+![the NPU section zoomed in: its dials, how a job runs, and the experiment library](docs/screenshots/zoom.png)
 
 Zoomed in, the NPU screen shows how a job runs on it, from the program on
 the CPU through the NPU's control core to its matrix engine (DPU), vector
 cores (SHAVE) and data movers (DMA), each lit by what the hardware is doing
 right now.
 
-Beside it is a library of experiments ([examples/npu](examples/npu)) in two
+Beside it is a library of experiments ([experiments/npu](experiments/npu)) in two
 shelves. The lab asks one question each: How fast is the matrix engine,
 and does size help? Which activations come free with a convolution? Where
 does a transformer's attention run? When does moving data, not maths, set
-the pace? How much faster is INT8? The applications run real workloads at
+the pace? How much faster is INT8? The workloads run real models at
 their real sizes: video-call background blur, speech to text, a language
 model reading a prompt and writing an answer, object detection, and
 embeddings for search. Each has a prediction written down first, what was
 measured (including where the prediction was wrong) and where it shows up
-in everyday use, which the screen shows for the example you pick. Pick one with
+in everyday use, which the screen shows for the experiment you pick. Pick one with
 `j`/`k` and run it with `r`: the run is marked on the dials as it happens,
 and its split across the engines is shown when it finishes. From a shell:
-`nix run .#npu-example -- 02-fusion`.
+`nix run .#npu-experiment -- 02-fusion`.
 
 ## Running it on NixOS
 
@@ -94,7 +94,7 @@ jantar.nixosModules.default
 
 It runs as its own user with access to just the screen, its console and the
 NPU: no network, no special privileges. Other options include `powercap`
-(the power breakdown), `usbBays` (naming the USB-C ports), `npuExamples`
+(the power breakdown), `usbBays` (naming the USB-C ports), `npuExperiments`
 and `maxFps`; see [nix/module.nix](nix/module.nix).
 
 On battery it draws at most 2 frames a second, and nothing at all while its
@@ -119,7 +119,7 @@ gives it back.
 ## Status
 
 * Done: every section above, the day and month history, zooming in, the
-  NPU's job diagram and example library, and the NixOS service.
+  NPU's job diagram and experiment library, and the NixOS service.
 * Next: a fleet view, watching several machines at once
   ([plan](docs/milestone-5-fleet.md)).
 

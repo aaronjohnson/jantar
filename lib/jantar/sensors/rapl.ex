@@ -11,12 +11,19 @@ defmodule Jantar.Sensors.Rapl do
   group (the NixOS module's `powercap` option); otherwise it is unavailable.
 
   Series `{:rapl, domain}` for each domain found (W, 30 min).
+
+  With `:publish` (a path; the NixOS module sets /run/jantar/energy.json),
+  each sample also writes the raw cumulative counters there, world-readable:
+  `{"t_ms": wall clock, "uj": {domain: energy}, "max_uj": {domain: wrap}}`.
+  The NPU experiments use it to measure joules per inference without power
+  access of their own. One reading a sample (a second, or slower when idle)
+  is far too coarse for the attack, which needs thousands a second.
   """
   @behaviour Jantar.Sensor
   alias Jantar.{Core, Sysfs}
 
   @impl true
-  def defaults, do: [interval: 1_000]
+  def defaults, do: [interval: 1_000, publish: Application.get_env(:jantar, :energy_file)]
 
   @impl true
   def init(opts) do
@@ -35,7 +42,7 @@ defmodule Jantar.Sensors.Rapl do
         {:unavailable, :no_readable_rapl}
 
       _ ->
-        {:ok, %{root: root, domains: domains, prev: %{}},
+        {:ok, %{root: root, domains: domains, prev: %{}, publish: opts[:publish]},
          for({d, _, _} <- domains, do: {{:rapl, d}, 30 * 60_000})}
     end
   end
@@ -57,8 +64,30 @@ defmodule Jantar.Sensors.Rapl do
           do: {d, w}
 
     prev = for {d, uj, _} <- readings, into: %{}, do: {d, {uj, now}}
+    publish(state.publish, readings)
     series = for {d, w} <- watts, do: {{:rapl, d}, w}
     {:ok, series, watts, %{state | prev: prev}}
+  end
+
+  defp publish(nil, _readings), do: :ok
+  defp publish(_path, []), do: :ok
+
+  defp publish(path, readings) do
+    body =
+      JSON.encode!(%{
+        t_ms: System.os_time(:millisecond),
+        uj: Map.new(readings, fn {d, uj, _} -> {d, uj} end),
+        max_uj: Map.new(readings, fn {d, _, max} -> {d, max} end)
+      })
+
+    # Whole or not at all for a reader: write aside, then rename over.
+    tmp = path <> ".new"
+
+    with :ok <- File.write(tmp, body),
+         :ok <- File.chmod(tmp, 0o644),
+         do: File.rename(tmp, path)
+
+    :ok
   end
 
   defp domain("psys"), do: :platform

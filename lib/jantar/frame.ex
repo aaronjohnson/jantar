@@ -44,7 +44,7 @@ defmodule Jantar.Frame do
               {:event, :wifi},
               {:event, :link},
               {:event, :restart},
-              {:event, :npu_example}
+              {:event, :npu_experiment}
             ] ++
             [{:swap, :in}, {:swap, :out}, {:disk, :read}, {:disk, :write}] ++
             for(d <- [:platform, :package, :cores, :graphics, :memory], do: {:rapl, d}) ++
@@ -52,8 +52,8 @@ defmodule Jantar.Frame do
 
   # Cutovers drawn as radial lines on the network dials.
   @network_events [{:event, :wifi}, {:event, :link}]
-  # Example runs (Jantar.NpuExamples) on the NPU dials.
-  @npu_events [{:event, :npu_example}]
+  # Experiment runs (Jantar.NpuExperiments) on the NPU dials.
+  @npu_events [{:event, :npu_experiment}]
   @sensors [
     :cpu,
     :memory,
@@ -73,7 +73,7 @@ defmodule Jantar.Frame do
     :link,
     :wifi_events,
     :ci_runner,
-    :npu_examples
+    :npu_experiments
   ]
 
   @doc """
@@ -474,13 +474,13 @@ defmodule Jantar.Frame do
       DL.text(x, y + 6 * u, :left, :top, [{"HOW A JOB RUNS", small, true, c.cyan}])
     ]
 
-    examples =
-      case sensors[:npu_examples] do
+    experiments =
+      case sensors[:npu_experiments] do
         nil ->
           []
 
         ex ->
-          examples_panel(
+          experiments_panel(
             ctx,
             ex,
             pick,
@@ -491,13 +491,13 @@ defmodule Jantar.Frame do
           )
       end
 
-    [box_ops, arrows, notes, examples]
+    [box_ops, arrows, notes, experiments]
   end
 
-  # The example library (Jantar.NpuExamples): the catalogue with the picked
-  # one marked, what's running, and each example's last engine split as a
+  # The experiment library (Jantar.NpuExperiments): the catalogue with the picked
+  # one marked, what's running, and each experiment's last engine split as a
   # bar in the diagram's colours (DPU blue, SHAVE cyan, DMA green).
-  defp examples_panel(%{c: c, u: u}, ex, pick, x, y, w, h) do
+  defp experiments_panel(%{c: c, u: u}, ex, pick, x, y, w, h) do
     small = 11 * u
     row = 14.5 * u
     cat = ex.catalogue
@@ -511,7 +511,7 @@ defmodule Jantar.Frame do
           "running #{ex.index}/#{ex.count}  #{ex.label}" <> queued_note(ex[:queue])
 
         running ->
-          "starting #{ex.example}"
+          "starting #{ex.experiment}"
 
         ex.state == :listing ->
           "reading the library"
@@ -524,7 +524,7 @@ defmodule Jantar.Frame do
       end
 
     header = [
-      DL.text(x, y, :left, :top, [{"EXAMPLES", small, true, c.cyan}]),
+      DL.text(x, y, :left, :top, [{"EXPERIMENTS", small, true, c.cyan}]),
       DL.text(x + w, y, :right, :top, [
         {status, small, false, if(running, do: c.cyan, else: c.dim)}
       ])
@@ -532,7 +532,7 @@ defmodule Jantar.Frame do
 
     bar_w = w * 0.28
     bar_x = x + w - bar_w
-    # Rows for the list, less one for the picked example's use; the list
+    # Rows for the list, less one for the picked experiment's use; the list
     # scrolls to keep the pick in view.
     shown = max(1, trunc((h - row) / row) - 1)
     first = if picked, do: (picked - div(shown, 2)) |> min(n - shown) |> max(0), else: 0
@@ -541,7 +541,7 @@ defmodule Jantar.Frame do
       for {e, i} <- Enum.with_index(cat), i >= first, i < first + shown do
         ly = y + row * (i - first + 1) + 2 * u
         on = i == picked
-        live = running and ex.example == e.name
+        live = running and ex.experiment == e.name
 
         col =
           cond do
@@ -1563,7 +1563,7 @@ defmodule Jantar.Frame do
         cond do
           abs(code) == 10 -> c.fg
           abs(code) == 11 -> c.dim
-          # An NPU example starting and ending.
+          # An NPU experiment starting and ending.
           code == 20 -> c.cyan
           code == 21 -> c.violet
           code > 0 -> c.green

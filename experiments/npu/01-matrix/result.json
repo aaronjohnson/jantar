@@ -1,0 +1,455 @@
+{
+ "experiment": "01-matrix",
+ "title": "Matrix work: how fast is the DPU, and does size help?",
+ "openvino": "2026.4.0-000--",
+ "seconds_per_trial": 1.0,
+ "trials": 5,
+ "turbo": true,
+ "results": [
+  {
+   "label": "4x conv3x3, 16 ch, 56x56",
+   "trials": 5,
+   "latency_ms": 0.121,
+   "latency_range_ms": [
+    0.104,
+    0.131
+   ],
+   "latency_spread": 0.063,
+   "device_ms": 0.027,
+   "device_range_ms": [
+    0.026,
+    0.038
+   ],
+   "device_spread": 0.074,
+   "stable": true,
+   "per_second": 7771.7,
+   "compile_ms": 1.5,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 27.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.058,
+   "tops": 0.48,
+   "device_tops": 2.14,
+   "by_trial": [
+    {
+     "device_ms": 0.027,
+     "latency_ms": 0.121,
+     "npu_mhz": 2050.0,
+     "compile_ms": 116.9
+    },
+    {
+     "device_ms": 0.026,
+     "latency_ms": 0.114,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.5
+    },
+    {
+     "device_ms": 0.029,
+     "latency_ms": 0.131,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.4
+    },
+    {
+     "device_ms": 0.038,
+     "latency_ms": 0.104,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.4
+    },
+    {
+     "device_ms": 0.027,
+     "latency_ms": 0.122,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.8
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_4",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 8.0
+    },
+    {
+     "name": "Convolution_7",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 3.0
+    },
+    {
+     "name": "Convolution_10",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 5.0
+    },
+    {
+     "name": "Convolution_13",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 11.0
+    }
+   ]
+  },
+  {
+   "label": "4x conv3x3, 64 ch, 56x56",
+   "trials": 5,
+   "latency_ms": 0.255,
+   "latency_range_ms": [
+    0.205,
+    0.271
+   ],
+   "latency_spread": 0.046,
+   "device_ms": 0.148,
+   "device_range_ms": [
+    0.147,
+    0.149
+   ],
+   "device_spread": 0.007,
+   "stable": true,
+   "per_second": 3792.6,
+   "compile_ms": 2.2,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 148.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 0.925,
+   "tops": 3.63,
+   "device_tops": 6.25,
+   "by_trial": [
+    {
+     "device_ms": 0.148,
+     "latency_ms": 0.263,
+     "npu_mhz": 2050.0,
+     "compile_ms": 135.1
+    },
+    {
+     "device_ms": 0.147,
+     "latency_ms": 0.205,
+     "npu_mhz": 2050.0,
+     "compile_ms": 2.2
+    },
+    {
+     "device_ms": 0.149,
+     "latency_ms": 0.255,
+     "npu_mhz": 2050.0,
+     "compile_ms": 2.3
+    },
+    {
+     "device_ms": 0.148,
+     "latency_ms": 0.252,
+     "npu_mhz": 2050.0,
+     "compile_ms": 2.0
+    },
+    {
+     "device_ms": 0.147,
+     "latency_ms": 0.271,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.9
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_18",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 41.0
+    },
+    {
+     "name": "Convolution_21",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 21.0
+    },
+    {
+     "name": "Convolution_24",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 31.0
+    },
+    {
+     "name": "Convolution_27",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 55.0
+    }
+   ]
+  },
+  {
+   "label": "4x conv3x3, 256 ch, 56x56",
+   "trials": 5,
+   "latency_ms": 1.474,
+   "latency_range_ms": [
+    1.461,
+    1.489
+   ],
+   "latency_spread": 0.018,
+   "device_ms": 0.952,
+   "device_range_ms": [
+    0.95,
+    0.956
+   ],
+   "device_spread": 0.005,
+   "stable": true,
+   "per_second": 661.5,
+   "compile_ms": 3.4,
+   "npu_mhz": [
+    2050,
+    2050,
+    2050.0,
+    2050.0,
+    2050
+   ],
+   "engines_us": {
+    "DPU": 952.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "gflop": 14.798,
+   "tops": 10.04,
+   "device_tops": 15.54,
+   "by_trial": [
+    {
+     "device_ms": 0.956,
+     "latency_ms": 1.461,
+     "npu_mhz": 2050,
+     "compile_ms": 333.9
+    },
+    {
+     "device_ms": 0.952,
+     "latency_ms": 1.461,
+     "npu_mhz": 2050,
+     "compile_ms": 2.8
+    },
+    {
+     "device_ms": 0.956,
+     "latency_ms": 1.474,
+     "npu_mhz": 2050.0,
+     "compile_ms": 3.4
+    },
+    {
+     "device_ms": 0.951,
+     "latency_ms": 1.489,
+     "npu_mhz": 2050.0,
+     "compile_ms": 3.5
+    },
+    {
+     "device_ms": 0.95,
+     "latency_ms": 1.487,
+     "npu_mhz": 2050,
+     "compile_ms": 3.3
+    }
+   ],
+   "layers": [
+    {
+     "name": "Convolution_32",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 298.0
+    },
+    {
+     "name": "Convolution_35",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 214.0
+    },
+    {
+     "name": "Convolution_38",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 209.0
+    },
+    {
+     "name": "Convolution_41",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 231.0
+    }
+   ]
+  },
+  {
+   "label": "matmul 512x512x512",
+   "trials": 5,
+   "latency_ms": 0.239,
+   "latency_range_ms": [
+    0.236,
+    0.243
+   ],
+   "latency_spread": 0.014,
+   "device_ms": 0.055,
+   "device_range_ms": [
+    0.054,
+    0.066
+   ],
+   "device_spread": 0.018,
+   "stable": true,
+   "per_second": 4097.6,
+   "compile_ms": 2.3,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 40.0,
+    "DMA": 15.0
+   },
+   "engines_share": {
+    "DPU": 0.727,
+    "DMA": 0.273
+   },
+   "gflop": 0.268,
+   "tops": 1.12,
+   "device_tops": 4.88,
+   "by_trial": [
+    {
+     "device_ms": 0.054,
+     "latency_ms": 0.243,
+     "npu_mhz": 2050.0,
+     "compile_ms": 146.7
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.239,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.5
+    },
+    {
+     "device_ms": 0.066,
+     "latency_ms": 0.236,
+     "npu_mhz": 2050.0,
+     "compile_ms": 1.9
+    },
+    {
+     "device_ms": 0.056,
+     "latency_ms": 0.238,
+     "npu_mhz": 2050.0,
+     "compile_ms": 2.3
+    },
+    {
+     "device_ms": 0.055,
+     "latency_ms": 0.242,
+     "npu_mhz": 2050.0,
+     "compile_ms": 2.3
+    }
+   ],
+   "layers": [
+    {
+     "name": "MatMul_46",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 40.0
+    },
+    {
+     "name": "Parameter_43",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 15.0
+    }
+   ]
+  },
+  {
+   "label": "matmul 2048x2048x2048",
+   "trials": 5,
+   "latency_ms": 3.038,
+   "latency_range_ms": [
+    2.96,
+    3.93
+   ],
+   "latency_spread": 0.073,
+   "device_ms": 1.413,
+   "device_range_ms": [
+    1.411,
+    1.415
+   ],
+   "device_spread": 0.001,
+   "stable": true,
+   "per_second": 301.3,
+   "compile_ms": 4.9,
+   "npu_mhz": [
+    2050,
+    2050.0,
+    2050.0,
+    2050.0,
+    2050
+   ],
+   "engines_us": {
+    "DPU": 1178.0,
+    "DMA": 235.0
+   },
+   "engines_share": {
+    "DPU": 0.834,
+    "DMA": 0.166
+   },
+   "gflop": 17.18,
+   "tops": 5.66,
+   "device_tops": 12.16,
+   "by_trial": [
+    {
+     "device_ms": 1.413,
+     "latency_ms": 3.93,
+     "npu_mhz": 2050,
+     "compile_ms": 649.2
+    },
+    {
+     "device_ms": 1.411,
+     "latency_ms": 2.962,
+     "npu_mhz": 2050.0,
+     "compile_ms": 4.5
+    },
+    {
+     "device_ms": 1.415,
+     "latency_ms": 2.96,
+     "npu_mhz": 2050.0,
+     "compile_ms": 5.0
+    },
+    {
+     "device_ms": 1.413,
+     "latency_ms": 3.038,
+     "npu_mhz": 2050.0,
+     "compile_ms": 4.9
+    },
+    {
+     "device_ms": 1.415,
+     "latency_ms": 3.185,
+     "npu_mhz": 2050,
+     "compile_ms": 4.8
+    }
+   ],
+   "layers": [
+    {
+     "name": "Parameter_48",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 235.0
+    },
+    {
+     "name": "MatMul_51",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 1178.0
+    }
+   ]
+  }
+ ]
+}

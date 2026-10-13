@@ -147,7 +147,7 @@ defmodule Jantar.Display.Ticker do
   def handle_info({port, {:data, bytes}}, %{keys: port} = state) do
     view = Map.take(state, [:scale, :focus, :window, :pick])
     {command, new} = Map.pop(keys(bytes, view), :command)
-    if command, do: npu_example(command, new)
+    if command, do: npu_experiment(command, new)
 
     if new != view and state.visible do
       if state.frame_timer, do: Process.cancel_timer(state.frame_timer)
@@ -356,7 +356,7 @@ defmodule Jantar.Display.Ticker do
     end
   end
 
-  # On the NPU screen: j / k pick an example, r or Enter runs it, x stops it.
+  # On the NPU screen: j / k pick an experiment, r or Enter runs it, x stops it.
   defp key(k, %{focus: "NPU"} = view) when k in [?j, ?k, ?r, ?x, ?\r, ?\n] do
     pick = Map.get(view, :pick, 0)
 
@@ -379,12 +379,12 @@ defmodule Jantar.Display.Ticker do
 
   # The pick counts up and down freely; it wraps around the catalogue here
   # and where the frame draws it.
-  defp npu_example(:stop, _view), do: Jantar.NpuExamples.stop()
+  defp npu_experiment(:stop, _view), do: Jantar.NpuExperiments.stop()
 
-  defp npu_example({:run, pick}, _view) do
-    case Jantar.History.current(:npu_examples) do
+  defp npu_experiment({:run, pick}, _view) do
+    case Jantar.History.current(:npu_experiments) do
       %{catalogue: [_ | _] = cat} ->
-        Jantar.NpuExamples.run(Enum.at(cat, Integer.mod(pick, length(cat))).name)
+        Jantar.NpuExperiments.run(Enum.at(cat, Integer.mod(pick, length(cat))).name)
 
       _ ->
         :ok
@@ -405,7 +405,7 @@ defmodule Jantar.Display.Ticker do
   defp label(state) do
     "#{state.label} · #{state.focus} #{div(state.window, 60_000)} min   " <>
       "1 1m  2 5m  3 30m   " <>
-      if(state.focus == "NPU" and Jantar.History.current(:npu_examples),
+      if(state.focus == "NPU" and Jantar.History.current(:npu_experiments),
         do: "j k pick  r run  x stop   ",
         else: ""
       ) <> "esc back"
