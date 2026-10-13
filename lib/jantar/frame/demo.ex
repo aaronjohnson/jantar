@@ -60,7 +60,9 @@ defmodule Jantar.Frame.Demo do
       {:link, :ipv6} =>
         series(1_800_000, 2000, fn t -> if t in 600_000..1_200_000, do: 1, else: 0 end),
       {:event, :wifi} => events([{1_320_000, 1}, {1_140_000, -1}, {1_110_000, 1}]),
-      {:event, :link} => events([{1_135_000, -2}, {1_085_000, 2}])
+      {:event, :link} => events([{1_135_000, -2}, {1_085_000, 2}]),
+      # Two example runs: one finished, one still going.
+      {:event, :npu_example} => events([{200_000, 20}, {140_000, 21}, {40_000, 20}])
     }
 
     kinds = List.duplicate("P", 4) ++ List.duplicate("E", 8) ++ List.duplicate("LP", 4)
@@ -90,6 +92,50 @@ defmodule Jantar.Frame.Demo do
       battery: %{status: "Charging", watts: 24.3, pct: 81, minutes: 38.0},
       charger: %{watts: 100.0, port: "/sys/class/power_supply/ucsi-source-psy-USBC000:002"},
       npu: %{load: 0.06, awake: true, mhz: 1400, max_mhz: 2050, mem_bytes: 68_714_496.0},
+      # The example library mid-run, with the engine splits measured on the
+      # real NPU (examples/npu/*/result.json).
+      npu_examples: %{
+        state: :running,
+        example: "02-fusion",
+        label: "conv + gelu (erf)",
+        index: 8,
+        count: 13,
+        error: nil,
+        catalogue: [
+          %{name: "01-matrix", title: "Matrix work: how fast is the DPU, and does size help?"},
+          %{name: "02-fusion", title: "Fusion: which activations ride along with the DPU?"},
+          %{name: "03-vector", title: "Vector work: softmax, normalisation and friends"},
+          %{name: "04-attention", title: "Attention: a transformer block, as the sequence grows"},
+          %{name: "05-data-movement", title: "Data movement: when the NPU waits on memory"},
+          %{name: "06-precision", title: "Precision: FP16 against INT8"}
+        ],
+        results: %{
+          "01-matrix" => %{
+            ok: true,
+            at: 0,
+            variants: [],
+            engines: %{"DPU" => 0.926, "DMA" => 0.074}
+          },
+          "02-fusion" => %{
+            ok: true,
+            at: 0,
+            variants: [],
+            engines: %{"DPU" => 0.759, "Shave" => 0.241}
+          },
+          "03-vector" => %{
+            ok: true,
+            at: 0,
+            variants: [],
+            engines: %{"Shave" => 0.638, "DMA" => 0.146, "DPU" => 0.216}
+          },
+          "05-data-movement" => %{
+            ok: false,
+            at: 0,
+            variants: [],
+            engines: %{"DPU" => 0.464, "Shave" => 0.239, "DMA" => 0.297}
+          }
+        }
+      },
       npu_counters: %{
         streaming: true,
         dma: 3.1e9,

@@ -21,6 +21,7 @@ slow ones as dots. Radial lines mark Wi-Fi roams, link drops and restarts.
 | --- | --- | --- |
 | `c` `g` `t` `n` `p` `m` `l` | zoom in on a section, in screen order (`n` the NPU, `l` links: wifi, traffic, route) | switch section |
 | `1` `2` `3` | live, last day, last 30 days | last 1, 5, 30 minutes |
+| `j` `k` `r` `x` | | on the NPU screen: pick an example, run it, stop it |
 | `Esc` | | back to the overview |
 
 ![the NPU section zoomed in: its dials, and how a job runs, lit by the live counters](docs/screenshots/zoom.png)
@@ -34,7 +35,9 @@ It follows Solarized light or dark, and shows whatever sensors a machine has.
 [examples/npu](examples/npu) is a small library of single-question NPU
 workloads (matrix work, fusion, vector maths, attention, data movement,
 precision), each with a written prediction and what was measured: which
-engine ran each layer and for how long. Run one while watching `n`:
+engine ran each layer and for how long. On the NPU screen (`n`), `j`/`k`
+pick one and `r` runs it, marked on the dials, with each example's last
+engine split beside it; or from a shell:
 `nix run .#npu-example -- 02-fusion --seconds 10`.
 
 ## Running it on NixOS

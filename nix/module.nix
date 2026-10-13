@@ -133,6 +133,25 @@ in
       '';
     };
 
+    npuExamples = mkOption {
+      type = types.bool;
+      default = cfg.npuCounters;
+      defaultText = lib.literalExpression "config.services.jantar.npuCounters";
+      description = ''
+        Offer the NPU example library (examples/npu) on the NPU screen:
+        j / k pick one, r runs it, x stops it. Each runs as its own process
+        (Python and OpenVINO), one at a time, and is marked on the NPU dials.
+        Needs the NPU device, like npuCounters.
+      '';
+    };
+
+    npuExamplePackage = mkOption {
+      type = types.package;
+      default = self.packages.${pkgs.stdenv.hostPlatform.system}.npu-example;
+      defaultText = lib.literalExpression "jantar.packages.\${system}.npu-example";
+      description = "The npu-example command the runner starts.";
+    };
+
     extraGroups = mkOption {
       type = types.listOf types.str;
       default = [ ];
@@ -193,6 +212,11 @@ in
         JANTAR_MAX_FPS = toString cfg.maxFps;
         JANTAR_BATTERY_MAX_FPS = toString cfg.batteryMaxFps;
         JANTAR_NPU_COUNTERS = if cfg.npuCounters then "1" else "0";
+      }
+      // lib.optionalAttrs cfg.npuExamples {
+        JANTAR_NPU_EXAMPLE = lib.getExe cfg.npuExamplePackage;
+      }
+      // {
         JANTAR_USB_BAYS = lib.concatStringsSep "," (lib.mapAttrsToList (k: v: "${k}=${v}") cfg.usbBays);
         RELEASE_TMP = "/run/jantar";
         LANG = "C.UTF-8";
@@ -244,7 +268,7 @@ in
           "${cfg.framebuffer} rw"
           "/dev/${tty} rw"
         ]
-        ++ lib.optional cfg.npuCounters "/dev/accel/accel0 rw";
+        ++ lib.optional (cfg.npuCounters || cfg.npuExamples) "/dev/accel/accel0 rw";
         ProtectKernelTunables = true;
         ProtectKernelModules = true;
         ProtectKernelLogs = true;

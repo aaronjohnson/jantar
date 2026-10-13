@@ -25,6 +25,9 @@ if config_env() == :prod do
   if env.("JANTAR_NPU_COUNTERS", "1") == "0",
     do: config(:jantar, Jantar.Sensors.NpuCounters, enabled: false)
 
+  # The NPU example library's command (the module's npuExamples).
+  if exe = System.get_env("JANTAR_NPU_EXAMPLE"), do: config(:jantar, Jantar.NpuExamples, exe: exe)
+
   # Theme: "dark" or "light" pins it; "file:/some/path" follows a file that
   # contains "dark" or "light" (checked every minute); unset asks gsettings.
   case env.("JANTAR_THEME", "") do

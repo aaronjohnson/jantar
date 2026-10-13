@@ -88,4 +88,54 @@ defmodule Jantar.FocusTest do
       assert bin =~ "SHAVE"
     end
   end
+
+  test "on the NPU screen, j k pick an example, r and Enter run it, x stops" do
+    npu = %{@overview | focus: "NPU"} |> Map.put(:pick, 0)
+    assert Ticker.keys("jj", npu).pick == 2
+    assert Ticker.keys("k", npu).pick == -1
+    assert Ticker.keys("jr", npu).command == {:run, 1}
+    assert Ticker.keys("\r", npu).command == {:run, 0}
+    assert Ticker.keys("x", npu).command == :stop
+    # Elsewhere those letters do nothing.
+    assert Ticker.keys("jrx", %{@overview | focus: "CPU"}) == %{@overview | focus: "CPU"}
+  end
+
+  test "the NPU screen lists the examples only when the runner is there" do
+    snap = Frame.Demo.snapshot()
+
+    {with_ex, _} =
+      Frame.build(snap, width: 1440, height: 960, focus: "NPU", theme: :dark, pick: 7)
+
+    assert with_ex =~ "EXAMPLES" and with_ex =~ "running 8/13"
+
+    sensors = Map.put(snap.sensors, :npu_examples, nil)
+
+    {without, _} =
+      Frame.build(%{snap | sensors: sensors},
+        width: 1440,
+        height: 960,
+        focus: "NPU",
+        theme: :dark
+      )
+
+    refute without =~ "EXAMPLES"
+
+    idle = %{
+      snap.sensors.npu_examples
+      | state: :idle,
+        catalogue: [],
+        results: %{},
+        error: "no examples (exit 1)"
+    }
+
+    {bin, _} =
+      Frame.build(%{snap | sensors: %{snap.sensors | npu_examples: idle}},
+        width: 1440,
+        height: 960,
+        focus: "NPU",
+        theme: :dark
+      )
+
+    assert bin =~ "no examples"
+  end
 end

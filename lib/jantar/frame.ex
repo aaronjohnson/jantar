@@ -39,7 +39,8 @@ defmodule Jantar.Frame do
               {:link, :ipv6},
               {:event, :wifi},
               {:event, :link},
-              {:event, :restart}
+              {:event, :restart},
+              {:event, :npu_example}
             ] ++
             [{:swap, :in}, {:swap, :out}, {:disk, :read}, {:disk, :write}] ++
             for(d <- [:platform, :package, :cores, :graphics, :memory], do: {:rapl, d}) ++
@@ -47,6 +48,8 @@ defmodule Jantar.Frame do
 
   # Cutovers drawn as radial lines on the network dials.
   @network_events [{:event, :wifi}, {:event, :link}]
+  # Example runs (Jantar.NpuExamples) on the NPU dials.
+  @npu_events [{:event, :npu_example}]
   @sensors [
     :cpu,
     :memory,
@@ -65,7 +68,8 @@ defmodule Jantar.Frame do
     :wifi,
     :link,
     :wifi_events,
-    :ci_runner
+    :ci_runner,
+    :npu_examples
   ]
 
   @doc """
@@ -200,6 +204,7 @@ defmodule Jantar.Frame do
           npu_diagram(
             ctx,
             snap.sensors,
+            opts[:pick] || 0,
             margin,
             h - foot_h - margin - extra_h,
             w - 2 * margin,
@@ -349,7 +354,7 @@ defmodule Jantar.Frame do
   # with what jantar measures for it (the dial colours): DPU and SHAVE share
   # "compute" (the counter can't split them), SHAVE also lights on its cache
   # traffic, RAM and CMX have no counter.
-  defp npu_diagram(%{c: c, u: u}, sensors, x, y, w, _h) do
+  defp npu_diagram(%{c: c, u: u} = ctx, sensors, pick, x, y, w, _h) do
     npu = sensors.npu
     n = sensors[:npu_counters]
     live = n != nil and n[:streaming] == true
@@ -456,7 +461,102 @@ defmodule Jantar.Frame do
       DL.text(x, y + 6 * u, :left, :top, [{"HOW A JOB RUNS", small, true, c.cyan}])
     ]
 
-    [box_ops, arrows, notes]
+    examples =
+      case sensors[:npu_examples] do
+        nil ->
+          []
+
+        ex ->
+          examples_panel(
+            ctx,
+            ex,
+            pick,
+            bx.(3),
+            y + 22 * u,
+            right.(4) - bx.(3),
+            bus_y - y - 30 * u
+          )
+      end
+
+    [box_ops, arrows, notes, examples]
+  end
+
+  # The example library (Jantar.NpuExamples): the catalogue with the picked
+  # one marked, what's running, and each example's last engine split as a
+  # bar in the diagram's colours (DPU blue, SHAVE cyan, DMA green).
+  defp examples_panel(%{c: c, u: u}, ex, pick, x, y, w, h) do
+    small = 11 * u
+    row = 14.5 * u
+    cat = ex.catalogue
+    n = length(cat)
+    picked = if n > 0, do: Integer.mod(pick, n)
+    running = ex.state == :running
+
+    status =
+      cond do
+        running and ex.count > 0 -> "running #{ex.index}/#{ex.count}  #{ex.label}"
+        running -> "starting #{ex.example}"
+        ex.state == :listing -> "reading the library"
+        ex.error -> ex.error
+        true -> "j k pick  r run  x stop"
+      end
+
+    header = [
+      DL.text(x, y, :left, :top, [{"EXAMPLES", small, true, c.cyan}]),
+      DL.text(x + w, y, :right, :top, [
+        {status, small, false, if(running, do: c.cyan, else: c.dim)}
+      ])
+    ]
+
+    bar_w = w * 0.28
+    bar_x = x + w - bar_w
+    shown = max(0, trunc((h - row) / row))
+
+    lines =
+      for {e, i} <- Enum.with_index(cat), i < shown do
+        ly = y + row * (i + 1) + 2 * u
+        on = i == picked
+        live = running and ex.example == e.name
+
+        col =
+          cond do
+            live -> c.cyan
+            on -> c.fg
+            true -> c.dim
+          end
+
+        [
+          DL.text(x, ly, :left, :top, [
+            {if(on, do: "▸ ", else: "  "), small, true, col},
+            # "Fusion: which activations ...": the part before the question.
+            {e.title |> String.split(":") |> hd(), small, on, col}
+          ]),
+          engine_bar(c, u, ex.results[e.name], bar_x, ly, bar_w, small)
+        ]
+      end
+
+    [header, lines]
+  end
+
+  defp engine_bar(c, _u, nil, x, y, _w, size),
+    do: DL.text(x, y, :left, :top, [{"not run yet", size, false, DL.mix(c.dim, c.bg, 0.7)}])
+
+  defp engine_bar(c, u, result, x, y, w, size) do
+    mid = y + size * 0.55
+
+    {rects, _} =
+      Enum.map_reduce([{"DPU", c.blue}, {"Shave", c.cyan}, {"DMA", c.green}], x, fn {k, kc}, x0 ->
+        bw = w * Map.get(result.engines, k, 0)
+        {{x0, mid - 3 * u, bw, 6 * u, kc}, x0 + bw}
+      end)
+
+    [
+      DL.rects(for {_, _, bw, _, _} = r <- rects, bw > 0, do: r),
+      if(result.ok,
+        do: [],
+        else: DL.text(x - 6 * u, y, :right, :top, [{"partial", size, false, c.orange}])
+      )
+    ]
   end
 
   defp clamp(v), do: v |> max(0.0) |> min(1.0)
@@ -730,6 +830,7 @@ defmodule Jantar.Frame do
       hist,
       scale: {:log, -3.0, 0.0},
       idle_floor: true,
+      events: @npu_events,
       guides: [0.01, 0.1],
       centre: [
         {Format.pct(npu.load), :green, true},
@@ -762,6 +863,7 @@ defmodule Jantar.Frame do
     dial(:npu_counters, "DMA", :green, series, hist,
       scale: {:log, 3.0, 10.0},
       idle_floor: true,
+      events: @npu_events,
       guides: [1.0e6, 1.0e9],
       centre: [
         {if(working, do: Format.count(n.dma) <> "/s", else: "idle"),
@@ -1333,6 +1435,9 @@ defmodule Jantar.Frame do
         cond do
           abs(code) == 10 -> c.fg
           abs(code) == 11 -> c.dim
+          # An NPU example starting and ending.
+          code == 20 -> c.cyan
+          code == 21 -> c.violet
           code > 0 -> c.green
           true -> c.red
         end
