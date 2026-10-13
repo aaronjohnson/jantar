@@ -1240,9 +1240,41 @@ defmodule Jantar.Frame do
         for({t, role, bold} <- title, do: {t, 11 * u, bold, c[role]})
       ),
       for {{t, role}, j} <- Enum.with_index(lines) do
-        DL.text(cx, ty + trunc((15 + 13 * j) * u), :center, :top, [{t, 10 * u, false, c[role]}])
+        DL.text(cx, ty + trunc((15 + 13 * j) * u), :center, :top, legend(c, t, 10 * u, role))
       end
     ]
+  end
+
+  @colour_words ~w(yellow orange red magenta violet blue cyan green)
+
+  # A legend line ("green DMA, magenta RISC-V, cyan SHAVE") with each phrase
+  # in the colour it names, so the words match the traces. A lead-in before
+  # a colon ("lines: green up, red down") and phrases naming no colour keep
+  # the line's own colour.
+  # Only the muted legend lines: others carry live text (an SSID could say "blue").
+  defp legend(c, text, size, role) when role != :muted, do: [{text, size, false, c[role]}]
+
+  defp legend(c, text, size, role) do
+    {lead, rest} =
+      case String.split(text, ": ", parts: 2) do
+        [l, r] -> {l <> ": ", r}
+        [r] -> {"", r}
+      end
+
+    phrases =
+      rest
+      |> String.split(", ")
+      |> Enum.map(fn phrase ->
+        colour = phrase |> String.split(" ") |> Enum.find(&(&1 in @colour_words))
+        {phrase, if(colour, do: c[String.to_existing_atom(colour)], else: c[role])}
+      end)
+
+    parts =
+      phrases
+      |> Enum.map(fn {t, col} -> {t, size, false, col} end)
+      |> Enum.intersperse({", ", size, false, c[role]})
+
+    [{lead, size, false, c[role]} | parts]
   end
 
   # The value in the middle of a dial: the first line big, the rest smaller.

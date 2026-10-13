@@ -16,37 +16,45 @@ show each run live.
 
 | | question | what we found |
 | --- | --- | --- |
-| [01-matrix](01-matrix) | How fast is the DPU, and does size help? | 1 → 14 TOPS from 16 to 256 channels; host time ≈ NPU time |
-| [02-fusion](02-fusion) | Which activations fuse into the convolution? | almost all, even GELU and swish; mish and ELU cost 2× the conv |
+| [01-matrix](01-matrix) | How fast is the DPU, and does size help? | 2 → 15.5 TOPS from 16 to 256 channels; the host adds ≥ 0.1 ms each time |
+| [02-fusion](02-fusion) | Which activations fuse into the convolution? | almost all, even GELU and swish; mish and ELU triple the time |
 | [03-vector](03-vector) | Where do softmax, norms, reshuffles run? | maths on SHAVE; adds, reductions, transposes on the DPU |
-| [04-attention](04-attention) | Does attention shift to SHAVE as sequences grow? | fused into one SHAVE layer; share peaks at 512 tokens |
+| [04-attention](04-attention) | Does attention shift to SHAVE as sequences grow? | fused into one SHAVE layer; its share peaks at 512 tokens |
 | [05-data-movement](05-data-movement) | When does data, not maths, set the pace? | big adds are DMA-bound; depthwise convs 50× less efficient |
-| [06-precision](06-precision) | How much faster is INT8? | not at all here; open question |
+| [06-precision](06-precision) | How much faster is INT8? | convs 1.5–2×; quantizing the input eats part of it |
 
 ## Method
 
 1. **Question**: one thing to find out.
 2. **Prediction**: written before running, in the example's `example.py`.
-3. **Run**: `run.py NAME --save` profiles each variant and saves
-   `NAME/result.json` (OpenVINO version included).
+3. **Run**: `run.py NAME --trials 5 --save`. Each variant runs in several
+   trials, each compiled afresh, taken in turn round the variants; the
+   report gives medians and flags any result whose spread is over 10% as
+   UNSETTLED.
 4. **Write up**: `NAME/README.md`: the numbers, what held, what didn't,
    what's still open. Wrong predictions are the useful ones.
+
+**Hold the clock still.** The NPU's clock follows load (950 to 2050 MHz
+measured), so the same layers took up to 66% longer from one run to the
+next. The harness turns on `NPU_TURBO`, which holds it at the maximum;
+spreads fell to 1–7%. `--no-turbo` measures the moving clock instead,
+which is how applications run by default.
 
 ## Running
 
 ```sh
 nix run ~/src/jantar#npu-example -- list
-nix run ~/src/jantar#npu-example -- 02-fusion [--seconds 10] [--json]
+nix run ~/src/jantar#npu-example -- 02-fusion [--trials 5] [--seconds 2] [--no-turbo] [--json]
 ```
 
-`--seconds` sets how long each variant runs (longer shows better on the
+`--seconds` sets how long each trial runs (longer shows better on the
 dials); `--json` prints JSON lines for jantar instead of a report.
 
 `--save` writes into the example's folder, so run it from a checkout:
 `. ./env.sh && $NPU_PY -I run.py NAME --save` (in `examples/npu`).
 
-Numbers vary run to run by a few percent, and with OpenVINO and firmware
-versions; the saved `result.json` records the version.
+Numbers vary with OpenVINO and firmware versions; the saved `result.json`
+records the version, the trials and whether turbo was on.
 
 ## Adding an example
 

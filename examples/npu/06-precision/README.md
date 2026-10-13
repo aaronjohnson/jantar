@@ -7,26 +7,27 @@ uses integer arrays. How much faster is the same work in INT8?
 small ones.
 
 **Measured** (4× conv 3×3, 56×56; INT8 via FakeQuantize on activations and
-weights, per-tensor):
+weights, per-tensor; 5 trials, turbo, medians; all spreads ≤ 4%):
 
-| variant | wall ms | NPU ms | TOPS (NPU) |
-| --- | ---: | ---: | ---: |
-| 64 ch, FP16 | 0.46 | 0.26 | 3.63 |
-| 64 ch, INT8 | 0.51 | 0.25 | 3.73 |
-| 256 ch, FP16 | 2.72 | 1.10 | 13.42 |
-| 256 ch, INT8 | 2.60 | 1.56 | 9.47 |
+| variant | wall ms | NPU ms | of which convs | TOPS (NPU) |
+| --- | ---: | ---: | ---: | ---: |
+| 64 ch, FP16 | 0.210 | 0.146 | 146 µs | 6.3 |
+| 64 ch, INT8 | 0.186 | 0.104 | 72 µs (+32 quantizing) | 8.9 |
+| 256 ch, FP16 | 1.492 | 0.958 | 958 µs | 15.5 |
+| 256 ch, INT8 | 1.032 | 0.773 | 656 µs (+117 quantizing) | 19.1 |
 
 **What it shows.**
-- The prediction failed: INT8 was no faster, and slower on the NPU for
-  256 channels. Quantizing the FP32 input became its own 300 µs layer,
-  and the INT8 convolutions took as long as the FP16 ones.
-- So either this NPU's FP16 rate matches its INT8 rate for these shapes,
-  or the compiler didn't run these convolutions in INT8. The compiled
-  model is an opaque blob, so OpenVINO can't show the precision it chose.
+- The convolutions themselves are 2.0× faster in INT8 at 64 channels and
+  1.46× at 256: the prediction had the sizes backwards.
+- Quantizing the FP32 input is a layer of its own (32 and 117 µs), which
+  eats part of the gain: 1.4× and 1.24× overall.
+- A first, single-run measurement said INT8 was *slower*, and the next
+  said faster: the NPU's clock was moving between runs (950 to 2050 MHz).
+  Holding it at maximum (turbo) and taking medians of five fresh trials
+  settled it. This example is why the harness now does both.
 
-**Open, and next to try.**
-- Per-channel weight quantization and symmetric ranges (what real
-  quantized models use) instead of one range per tensor.
-- A model quantized by NNCF, OpenVINO's quantization tool, rather than
-  hand-placed FakeQuantize.
-- Feed INT8 or FP16 inputs directly to skip the input quantization layer.
+**Open.**
+- Per-channel weight quantization and symmetric ranges, as real
+  quantized models use.
+- A model quantized by NNCF, OpenVINO's quantization tool.
+- Feed INT8 inputs directly to skip the quantizing layer.

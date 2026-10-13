@@ -1,8 +1,11 @@
-"""Run an NPU example: python3 -I run.py NAME [--seconds S] [--json] [--save]
+"""Run an NPU example: run.py NAME [--seconds S] [--trials N] [--no-turbo] [--json] [--save]
 
   NAME        an example folder (01-matrix), or `list` for the catalogue
-  --seconds   how long each variant runs (default 5): longer shows up
-              better on jantar's dials
+  --seconds   how long each trial of a variant runs (default 2)
+  --trials    trials per variant, each compiled afresh (default 3): the
+              report gives medians and flags spreads over 10%
+  --no-turbo  let the NPU's clock follow load (the default holds it at its
+              maximum, which makes trials repeatable: see harness.trial)
   --json      JSON lines on stdout (for jantar) instead of a report
   --save      also write NAME/result.json
 
@@ -34,7 +37,9 @@ def load(path):
 def main():
     ap = argparse.ArgumentParser(description="Run an NPU example.")
     ap.add_argument("name")
-    ap.add_argument("--seconds", type=float, default=5)
+    ap.add_argument("--seconds", type=float, default=2)
+    ap.add_argument("--trials", type=int, default=3)
+    ap.add_argument("--no-turbo", dest="turbo", action="store_false")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--save", action="store_true")
     a = ap.parse_args()
@@ -51,7 +56,8 @@ def main():
     path = here / a.name
     if not (path / "example.py").is_file():
         sys.exit(f"no example {a.name}; try: list")
-    harness.run(load(path), a.name, a.seconds, a.json, path / "result.json" if a.save else None)
+    harness.run(load(path), a.name, a.seconds, a.json, path / "result.json" if a.save else None,
+                trials=max(1, a.trials), turbo=a.turbo)
 
 
 if __name__ == "__main__":

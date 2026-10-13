@@ -169,4 +169,22 @@ defmodule Jantar.FocusTest do
 
     assert bin =~ "counters lost, retrying"
   end
+
+  test "legend words take the colours they name" do
+    {bin, _} =
+      Frame.build(Frame.Demo.snapshot(), width: 1440, height: 960, focus: "NPU", theme: :dark)
+
+    c = Jantar.Theme.palette(:dark)
+    # "green DMA" is a text part of its own, in green; "magenta RISC-V" in magenta.
+    assert :binary.match(bin, "green DMA") != :nomatch
+
+    for {word, colour} <- [
+          {"green DMA", c.green},
+          {"magenta RISC-V", c.magenta},
+          {"cyan SHAVE", c.cyan}
+        ] do
+      assert :binary.match(bin, <<colour::32-little, byte_size(word)::16-little, word::binary>>) !=
+               :nomatch
+    end
+  end
 end

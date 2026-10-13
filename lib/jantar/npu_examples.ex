@@ -23,7 +23,7 @@ defmodule Jantar.NpuExamples do
   run of each example survives a restart.
 
   Options: `:exe` (the npu-example command; without it nothing starts),
-  `:seconds` (per variant, default 4), `:list_delay` (ms), `:state_dir`,
+  `:seconds` (per trial of a variant, default 1; 3 trials each), `:list_delay` (ms), `:state_dir`,
   `:name`.
   """
   @behaviour :gen_statem
@@ -58,7 +58,7 @@ defmodule Jantar.NpuExamples do
 
     data = %{
       exe: Keyword.fetch!(opts, :exe),
-      seconds: opts[:seconds] || 4,
+      seconds: opts[:seconds] || 1,
       file: opts[:state_dir] && Path.join(opts[:state_dir], "npu_examples.etf"),
       catalogue: [],
       results: %{},
@@ -217,8 +217,9 @@ defmodule Jantar.NpuExamples do
 
   defp line(:running, line, data) do
     case JSON.decode(line) do
-      {:ok, %{"event" => "start", "variants" => v}} ->
-        %{data | count: length(v)}
+      # Steps: each variant once per trial (older output: once each).
+      {:ok, %{"event" => "start", "variants" => v} = start} ->
+        %{data | count: start["steps"] || length(v)}
 
       {:ok, %{"event" => "variant", "label" => label}} ->
         %{data | label: label, index: data.index + 1}

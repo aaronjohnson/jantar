@@ -1,5 +1,5 @@
 {
-  description = "jantar: a BEAM (Gleam + Elixir) system monitor dashboard";
+  description = "jantar: Your whole machine on one screen, on a spare Linux text console: CPU, GPU, NPU, power, memory, disks and network, live and over the last day or month";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 

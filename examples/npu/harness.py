@@ -8,9 +8,10 @@ which returns [(label, ov.Model, flops or None)]. See README.md.
 
 Output is either a readable report or, with --json, one JSON object per
 line on stdout, for jantar:
-  {"event": "start", "example": ..., "title": ..., "variants": [...]}
-  {"event": "variant", "label": ..., "phase": "compile" | "run"}
-  {"event": "result", "label": ..., ...}     one per variant
+  {"event": "start", "example": ..., "title": ..., "variants": [...],
+   "trials": n, "steps": variants x trials}
+  {"event": "variant", "label": "... (t/n)", "phase": "run"}   each step
+  {"event": "result", "label": ..., ...}     one per variant, at the end
   {"event": "done", "example": ...}
 """
 import collections
@@ -47,51 +48,114 @@ def profile(req):
     return rows
 
 
-def run_variant(core, label, model, flops, seconds, rng):
+NPU_MHZ = "/sys/class/accel/accel0/device/npu_current_frequency_mhz"
+# A spread (max - min, over the median) above this marks a result unsettled.
+UNSTABLE = 0.10
+
+
+def npu_mhz():
+    try:
+        with open(NPU_MHZ) as f:
+            return int(f.read())
+    except OSError:
+        return None
+
+
+def trial(core, model, seconds, feeds, turbo=True):
+    """One trial: compile afresh, warm up, run back to back for `seconds`.
+
+    Turbo holds the NPU's clock at its maximum. Without it the clock
+    follows load (measured: 950 to 2050 MHz between trials of the same
+    layers), and the same work took up to 66% longer from one trial to the
+    next; with it, 1%."""
     t0 = time.perf_counter()
-    compiled = core.compile_model(model, "NPU", {"PERF_COUNT": True})
+    compiled = core.compile_model(model, "NPU", {"PERF_COUNT": True, "NPU_TURBO": turbo})
     compile_ms = (time.perf_counter() - t0) * 1e3
     req = compiled.create_infer_request()
-    feeds = inputs_for(model, rng)
     for _ in range(5):
         req.infer(feeds)  # warm up
 
-    # Latency: many single inferences, back to back, for `seconds`.
-    times = []
+    # The NPU's clock moves with load (power management), so sample it
+    # through the trial, between inferences, every 20 ms or so.
+    times, clocks = [], []
     end = time.perf_counter() + seconds
+    next_clock = 0.0
     while time.perf_counter() < end or len(times) < 20:
         a = time.perf_counter()
         req.infer(feeds)
-        times.append(time.perf_counter() - a)
+        b = time.perf_counter()
+        times.append(b - a)
+        if b >= next_clock:
+            clocks.append(npu_mhz())
+            next_clock = b + 0.02
+    clocks = [m for m in clocks if m]
+    mhz = statistics.median(clocks) if clocks else None
 
     rows = profile(req)
     by_engine = collections.Counter()
     for _, _, engine, us in rows:
         by_engine[engine] += us
-    total = sum(by_engine.values()) or 1.0
-    median_ms = statistics.median(times) * 1e3
-
     return {
-        "label": label,
         "compile_ms": round(compile_ms, 1),
-        "latency_ms": round(median_ms, 3),
-        "p90_ms": round(sorted(times)[int(len(times) * 0.9)] * 1e3, 3),
+        "latency_ms": statistics.median(times) * 1e3,
+        "p90_ms": sorted(times)[int(len(times) * 0.9)] * 1e3,
         "inferences": len(times),
-        "per_second": round(len(times) / sum(times), 1),
-        "engines_us": {k: round(v, 1) for k, v in by_engine.most_common()},
-        "engines_share": {k: round(v / total, 3) for k, v in by_engine.most_common()},
+        "per_second": len(times) / sum(times),
+        "npu_mhz": mhz,
+        "engines_us": by_engine,
         # Engine time: the per-layer profile added up, for one inference.
         # Layers on different engines can overlap, so this can exceed the
         # latency; where it's less, the rest is the host: submitting,
         # copying inputs and outputs, waiting for the fence.
-        "device_ms": round(total / 1e3, 3),
+        "device_ms": sum(by_engine.values()) / 1e3,
+        "rows": rows,
+    }
+
+
+def spread(values):
+    """(median, min, max, spread): the spread is (max - min) / median, with
+    the highest and lowest left out once there are 5 or more, so one odd
+    trial doesn't make a result look unsettled."""
+    m = statistics.median(values)
+    core = sorted(values)[1:-1] if len(values) >= 5 else values
+    return m, min(values), max(values), (max(core) - min(core)) / m if m else 0.0
+
+
+def summarise(label, flops, trials):
+    """A variant's result over its trials: medians, spreads, and the median
+    trial's per-layer profile."""
+    dev = spread([t["device_ms"] for t in trials])
+    lat = spread([t["latency_ms"] for t in trials])
+    mid = sorted(trials, key=lambda t: t["device_ms"])[len(trials) // 2]
+    total = sum(mid["engines_us"].values()) or 1.0
+    return {
+        "label": label,
+        "trials": len(trials),
+        "latency_ms": round(lat[0], 3),
+        "latency_range_ms": [round(lat[1], 3), round(lat[2], 3)],
+        "latency_spread": round(lat[3], 3),
+        "device_ms": round(dev[0], 3),
+        "device_range_ms": [round(dev[1], 3), round(dev[2], 3)],
+        "device_spread": round(dev[3], 3),
+        # The NPU's own time is what the examples are about.
+        "stable": dev[3] <= UNSTABLE,
+        "per_second": round(statistics.median(t["per_second"] for t in trials), 1),
+        "compile_ms": round(statistics.median(t["compile_ms"] for t in trials), 1),
+        "npu_mhz": [t["npu_mhz"] for t in trials],
+        "engines_us": {k: round(v, 1) for k, v in mid["engines_us"].most_common()},
+        "engines_share": {k: round(v / total, 3) for k, v in mid["engines_us"].most_common()},
         "gflop": round(flops / 1e9, 3) if flops else None,
         # Effective rates (FP16 unless the model is quantized), not peaks:
         # over the whole inference, and over the NPU's engine time only.
-        "tops": round(flops / (median_ms / 1e3) / 1e12, 2) if flops else None,
-        "device_tops": round(flops / (total / 1e6) / 1e12, 2) if flops else None,
+        "tops": round(flops / (lat[0] / 1e3) / 1e12, 2) if flops else None,
+        "device_tops": round(flops / (dev[0] / 1e3) / 1e12, 2) if flops else None,
+        "by_trial": [
+            {"device_ms": round(t["device_ms"], 3), "latency_ms": round(t["latency_ms"], 3),
+             "npu_mhz": t["npu_mhz"], "compile_ms": t["compile_ms"]}
+            for t in trials
+        ],
         "layers": [
-            {"name": n, "type": t, "engine": e, "us": round(us, 1)} for n, t, e, us in rows
+            {"name": n, "type": ty, "engine": e, "us": round(us, 1)} for n, ty, e, us in mid["rows"]
         ],
     }
 
@@ -100,16 +164,23 @@ def report(example, results):
     print(f"\n{example.TITLE}\n")
     print("question:  " + " ".join(example.QUESTION.split()))
     print("predicted: " + " ".join(example.PREDICTION.split()))
-    print(f"\n{'variant':30} {'wall ms':>8} {'NPU ms':>7} {'/s':>7} {'TOPS':>6} {'NPU':>6}   engine time (one inference)")
+    n = results[0]["trials"] if results else 0
+    print(f"\n{n} trials per variant, each compiled afresh; medians, with the NPU time's range.")
+    print(f"\n{'variant':30} {'wall ms':>8} {'NPU ms':>7} {'range':>15} {'spread':>7} {'NPU TOPS':>9}   engines (median trial)")
     for r in results:
         split = "  ".join(f"{k} {v:.0f}µs" for k, v in r["engines_us"].items())
-        tops = f"{r['tops']:.2f}" if r["tops"] is not None else ""
         dtops = f"{r['device_tops']:.2f}" if r["device_tops"] is not None else ""
-        print(f"{r['label'][:30]:30} {r['latency_ms']:8.3f} {r['device_ms']:7.3f} {r['per_second']:7.0f} "
-              f"{tops:>6} {dtops:>6}   {split}")
+        lo, hi = r["device_range_ms"]
+        flag = "" if r["stable"] else "  UNSETTLED"
+        print(f"{r['label'][:30]:30} {r['latency_ms']:8.3f} {r['device_ms']:7.3f} {lo:7.3f}–{hi:<7.3f} "
+              f"{r['device_spread'] * 100:6.0f}% {dtops:>9}   {split}{flag}")
     print("\nwall = one inference as the program sees it. NPU = the per-layer engine"
-          "\ntimes added up; engines can overlap, so it can exceed wall. TOPS over"
-          "\nwall time, then over NPU time.")
+          "\ntimes added up; engines can overlap, so it can exceed wall. spread ="
+          f"\n(max - min) / median of the NPU time, less the extremes from 5 trials;"
+          f"\nover {UNSTABLE:.0%} is UNSETTLED.")
+    clocks = sorted({m for r in results for m in r["npu_mhz"] if m})
+    if clocks:
+        print("NPU clock seen during trials: " + ", ".join(f"{m} MHz" for m in clocks))
     print("\nlayers off the DPU (first variant that has any):")
     for r in results:
         off = [l for l in r["layers"] if l["engine"] not in ("DPU",)]
@@ -120,31 +191,38 @@ def report(example, results):
             break
 
 
-def run(example, name, seconds, as_json, save=None):
+def run(example, name, seconds, as_json, save=None, trials=3, turbo=True):
     core = ov.Core()
     if "NPU" not in core.available_devices:
         sys.exit("no NPU: OpenVINO sees " + ", ".join(core.available_devices))
     rng = np.random.default_rng(0)
     variants = example.variants()
+    feeds = [inputs_for(model, rng) for _, model, _ in variants]
+    labels = [v[0] for v in variants]
     if as_json:
         emit({"event": "start", "example": name, "title": example.TITLE,
-              "variants": [v[0] for v in variants]})
-    results = []
-    for label, model, flops in variants:
-        if as_json:
-            emit({"event": "variant", "label": label, "phase": "run"})
-        r = run_variant(core, label, model, flops, seconds, rng)
-        results.append(r)
-        if as_json:
-            emit({"event": "result", **r})
+              "variants": labels, "trials": trials, "steps": trials * len(variants)})
+
+    # Trials go round the variants, so slow drift (clocks, temperature)
+    # spreads over all of them instead of favouring the first.
+    done = [[] for _ in variants]
+    for t in range(trials):
+        for i, (label, model, _) in enumerate(variants):
+            if as_json:
+                emit({"event": "variant", "label": f"{label} ({t + 1}/{trials})", "phase": "run"})
+            done[i].append(trial(core, model, seconds, feeds[i], turbo))
+
+    results = [summarise(label, flops, done[i]) for i, (label, _, flops) in enumerate(variants)]
     if as_json:
+        for r in results:
+            emit({"event": "result", **r})
         emit({"event": "done", "example": name})
     else:
         report(example, results)
     if save:
         with open(save, "w") as f:
             json.dump({"example": name, "title": example.TITLE,
-                       "openvino": ov.get_version(), "seconds_per_variant": seconds,
-                       "results": results}, f, indent=1)
+                       "openvino": ov.get_version(), "seconds_per_trial": seconds,
+                       "trials": trials, "turbo": turbo, "results": results}, f, indent=1)
             f.write("\n")
     return results

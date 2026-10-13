@@ -72,7 +72,7 @@ beamPackages.mixRelease {
   };
 
   meta = {
-    description = "System dashboard for a Linux console, on the BEAM (Gleam + Elixir, Rust and C renderers)";
+    description = "Your whole machine on one screen, on a spare Linux text console: CPU, GPU, NPU, power, memory, disks and network, live and over the last day or month";
     mainProgram = "jantar";
     platforms = lib.platforms.linux;
   };

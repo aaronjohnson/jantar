@@ -97,8 +97,10 @@ defmodule Jantar.HistoryTest do
     t0 = 3_600_000 - rem(offset, 3_600_000) + 3_600_000
 
     # Three minutes: values 1, 2, 3 in each, plus a gap that isn't counted.
+    # Clear of the minute's edges: History converts to wall time with an
+    # offset read afresh each push, which can differ by a millisecond.
     for m <- 0..2,
-        {dt, v} <- [{0, 1.0}, {20_000, 2.0}, {30_000, nil}, {40_000, 3}],
+        {dt, v} <- [{5_000, 1.0}, {20_000, 2.0}, {30_000, nil}, {40_000, 3}],
         do: History.push(s, t0 + m * 60_000 + dt, v)
 
     day = History.archive(s, :day)
