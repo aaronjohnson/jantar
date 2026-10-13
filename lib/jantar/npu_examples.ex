@@ -1,11 +1,12 @@
 defmodule Jantar.NpuExamples do
   @moduledoc """
   Runs the NPU example library (examples/npu, the `npu-example` command) on
-  request from the NPU screen, one example at a time, and publishes what it
-  is doing as the `:npu_examples` sensor:
+  request from the NPU screen, one example at a time (requests made while
+  one runs wait in a queue), and publishes what it is doing as the
+  `:npu_examples` sensor:
 
       %{state: :idle | :listing | :running, catalogue: [%{name, title}],
-        example: name, label: variant, index: n, count: n,
+        example: name, label: variant, index: n, count: n, queue: [name],
         results: %{name => %{ok: bool, at: unix s, engines: %{"DPU" => share},
                              variants: [%{label, latency_ms, device_ms, ...}]}},
         error: text or nil}
@@ -41,10 +42,10 @@ defmodule Jantar.NpuExamples do
   def start_link(opts),
     do: :gen_statem.start_link({:local, opts[:name] || __MODULE__}, __MODULE__, opts, [])
 
-  @doc "Run the named example (ignored while one is running or none is known)."
+  @doc "Run the named example, or queue it if one is running (unknown names are ignored)."
   def run(name, server \\ __MODULE__), do: :gen_statem.cast(server, {:run, name})
 
-  @doc "Stop the running example."
+  @doc "Stop the running example and empty the queue."
   def stop(server \\ __MODULE__), do: :gen_statem.cast(server, :stop)
 
   @impl true
@@ -69,6 +70,7 @@ defmodule Jantar.NpuExamples do
       index: 0,
       count: 0,
       variants: [],
+      queue: [],
       error: nil
     }
 
@@ -107,11 +109,23 @@ defmodule Jantar.NpuExamples do
     end
   end
 
+  # Busy: queue it, once (not the one running, nor one already waiting).
+  def handle_event(:cast, {:run, name}, :running, data) do
+    if Enum.any?(data.catalogue, &(&1.name == name)) and name != data.example and
+         name not in data.queue do
+      data = %{data | queue: data.queue ++ [name]}
+      publish(:running, data)
+      {:keep_state, data}
+    else
+      :keep_state_and_data
+    end
+  end
+
   def handle_event(:cast, {:run, _}, _state, _data), do: :keep_state_and_data
 
   def handle_event(:cast, :stop, :running, data) do
     kill(data)
-    {:keep_state, %{data | error: "stopped"}}
+    {:keep_state, %{data | error: "stopped", queue: []}}
   end
 
   def handle_event(:cast, :stop, _state, _data), do: :keep_state_and_data
@@ -173,7 +187,14 @@ defmodule Jantar.NpuExamples do
 
     data = %{data | port: nil, os_pid: nil}
     publish(:idle, data)
-    {:next_state, :idle, data}
+
+    case data.queue do
+      [] ->
+        {:next_state, :idle, data}
+
+      [next | rest] ->
+        {:next_state, :idle, %{data | queue: rest}, [{:next_event, :cast, {:run, next}}]}
+    end
   end
 
   def handle_event(:info, {:EXIT, _, _}, _state, _data), do: :keep_state_and_data
@@ -263,7 +284,7 @@ defmodule Jantar.NpuExamples do
   defp publish(state, data) do
     current =
       data
-      |> Map.take([:catalogue, :results, :example, :label, :index, :count, :error])
+      |> Map.take([:catalogue, :results, :example, :label, :index, :count, :queue, :error])
       |> Map.put(:state, state)
 
     History.put_sensor(:npu_examples, :ok, current, now())

@@ -494,11 +494,20 @@ defmodule Jantar.Frame do
 
     status =
       cond do
-        running and ex.count > 0 -> "running #{ex.index}/#{ex.count}  #{ex.label}"
-        running -> "starting #{ex.example}"
-        ex.state == :listing -> "reading the library"
-        ex.error -> ex.error
-        true -> "j k pick  r run  x stop"
+        running and ex.count > 0 ->
+          "running #{ex.index}/#{ex.count}  #{ex.label}" <> queued_note(ex[:queue])
+
+        running ->
+          "starting #{ex.example}"
+
+        ex.state == :listing ->
+          "reading the library"
+
+        ex.error ->
+          ex.error
+
+        true ->
+          "j k pick  r run  x stop"
       end
 
     header = [
@@ -525,7 +534,12 @@ defmodule Jantar.Frame do
             true -> c.dim
           end
 
+        place = Enum.find_index(ex[:queue] || [], &(&1 == e.name))
+
         [
+          DL.text(bar_x - 6 * u, ly, :right, :top, [
+            {if(place, do: "queued #{place + 1}", else: ""), small, false, c.cyan}
+          ]),
           DL.text(x, ly, :left, :top, [
             {if(on, do: "▸ ", else: "  "), small, true, col},
             # "Fusion: which activations ...": the part before the question.
@@ -537,6 +551,9 @@ defmodule Jantar.Frame do
 
     [header, lines]
   end
+
+  defp queued_note([_ | _] = q), do: "  +#{length(q)} queued"
+  defp queued_note(_), do: ""
 
   defp engine_bar(c, _u, nil, x, y, _w, size),
     do: DL.text(x, y, :left, :top, [{"not run yet", size, false, DL.mix(c.dim, c.bg, 0.7)}])

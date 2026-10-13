@@ -100,6 +100,7 @@ defmodule Jantar.Frame.Demo do
         label: "conv + gelu (erf)",
         index: 8,
         count: 13,
+        queue: ["04-attention", "06-precision"],
         error: nil,
         catalogue: [
           %{name: "01-matrix", title: "Matrix work: how fast is the DPU, and does size help?"},

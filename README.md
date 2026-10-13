@@ -21,7 +21,7 @@ slow ones as dots. Radial lines mark Wi-Fi roams, link drops and restarts.
 | --- | --- | --- |
 | `c` `g` `t` `n` `p` `m` `l` | zoom in on a section, in screen order (`n` the NPU, `l` links: wifi, traffic, route) | switch section |
 | `1` `2` `3` | live, last day, last 30 days | last 1, 5, 30 minutes |
-| `j` `k` `r` `x` | | on the NPU screen: pick an example, run it, stop it |
+| `j` `k` `r` `x` | | on the NPU screen: pick an example, run it (or queue it behind the one running), stop it and clear the queue |
 | `Esc` | | back to the overview |
 
 ![the NPU section zoomed in: its dials, and how a job runs, lit by the live counters](docs/screenshots/zoom.png)
