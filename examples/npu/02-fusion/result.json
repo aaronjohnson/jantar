@@ -1,0 +1,374 @@
+{
+ "example": "02-fusion",
+ "title": "Fusion: which activations ride along with the DPU?",
+ "openvino": "2026.4.0-000--",
+ "seconds_per_variant": 2.0,
+ "results": [
+  {
+   "label": "conv + none",
+   "compile_ms": 133.8,
+   "latency_ms": 0.485,
+   "p90_ms": 0.543,
+   "inferences": 4198,
+   "per_second": 2101.3,
+   "engines_us": {
+    "DPU": 135.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "device_ms": 0.135,
+   "gflop": 0.231,
+   "tops": 0.48,
+   "device_tops": 1.71,
+   "layers": [
+    {
+     "name": "Convolution_4",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 135.0
+    }
+   ]
+  },
+  {
+   "label": "conv + relu",
+   "compile_ms": 259.8,
+   "latency_ms": 0.541,
+   "p90_ms": 0.564,
+   "inferences": 3737,
+   "per_second": 1870.9,
+   "engines_us": {
+    "DPU": 135.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "device_ms": 0.135,
+   "gflop": 0.231,
+   "tops": 0.43,
+   "device_tops": 1.71,
+   "layers": [
+    {
+     "name": "Convolution_9",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 135.0
+    }
+   ]
+  },
+  {
+   "label": "conv + clamp 0..6",
+   "compile_ms": 211.6,
+   "latency_ms": 0.549,
+   "p90_ms": 0.566,
+   "inferences": 3691,
+   "per_second": 1847.8,
+   "engines_us": {
+    "DPU": 134.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "device_ms": 0.134,
+   "gflop": 0.231,
+   "tops": 0.42,
+   "device_tops": 1.73,
+   "layers": [
+    {
+     "name": "Convolution_15",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 134.0
+    }
+   ]
+  },
+  {
+   "label": "conv + leaky relu",
+   "compile_ms": 266.4,
+   "latency_ms": 0.522,
+   "p90_ms": 0.556,
+   "inferences": 3844,
+   "per_second": 1924.4,
+   "engines_us": {
+    "DPU": 135.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "device_ms": 0.135,
+   "gflop": 0.231,
+   "tops": 0.44,
+   "device_tops": 1.71,
+   "layers": [
+    {
+     "name": "Convolution_21",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 135.0
+    }
+   ]
+  },
+  {
+   "label": "conv + hswish",
+   "compile_ms": 206.3,
+   "latency_ms": 0.543,
+   "p90_ms": 0.555,
+   "inferences": 3769,
+   "per_second": 1887.0,
+   "engines_us": {
+    "DPU": 139.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "device_ms": 0.139,
+   "gflop": 0.231,
+   "tops": 0.43,
+   "device_tops": 1.66,
+   "layers": [
+    {
+     "name": "Convolution_29",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 139.0
+    }
+   ]
+  },
+  {
+   "label": "conv + sigmoid",
+   "compile_ms": 205.7,
+   "latency_ms": 0.54,
+   "p90_ms": 0.559,
+   "inferences": 3754,
+   "per_second": 1879.4,
+   "engines_us": {
+    "DPU": 139.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "device_ms": 0.139,
+   "gflop": 0.231,
+   "tops": 0.43,
+   "device_tops": 1.66,
+   "layers": [
+    {
+     "name": "Convolution_35",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 139.0
+    }
+   ]
+  },
+  {
+   "label": "conv + swish",
+   "compile_ms": 301.0,
+   "latency_ms": 0.529,
+   "p90_ms": 0.554,
+   "inferences": 3845,
+   "per_second": 1925.1,
+   "engines_us": {
+    "DPU": 137.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "device_ms": 0.137,
+   "gflop": 0.231,
+   "tops": 0.44,
+   "device_tops": 1.69,
+   "layers": [
+    {
+     "name": "Convolution_41",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 137.0
+    }
+   ]
+  },
+  {
+   "label": "conv + gelu (erf)",
+   "compile_ms": 212.1,
+   "latency_ms": 0.544,
+   "p90_ms": 0.554,
+   "inferences": 3750,
+   "per_second": 1877.7,
+   "engines_us": {
+    "DPU": 138.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "device_ms": 0.138,
+   "gflop": 0.231,
+   "tops": 0.43,
+   "device_tops": 1.68,
+   "layers": [
+    {
+     "name": "Convolution_48",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 138.0
+    }
+   ]
+  },
+  {
+   "label": "conv + gelu (tanh)",
+   "compile_ms": 205.0,
+   "latency_ms": 0.526,
+   "p90_ms": 0.553,
+   "inferences": 3829,
+   "per_second": 1917.1,
+   "engines_us": {
+    "DPU": 136.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "device_ms": 0.136,
+   "gflop": 0.231,
+   "tops": 0.44,
+   "device_tops": 1.7,
+   "layers": [
+    {
+     "name": "Convolution_54",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 136.0
+    }
+   ]
+  },
+  {
+   "label": "conv + tanh",
+   "compile_ms": 208.2,
+   "latency_ms": 0.516,
+   "p90_ms": 0.549,
+   "inferences": 3889,
+   "per_second": 1947.0,
+   "engines_us": {
+    "DPU": 116.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "device_ms": 0.116,
+   "gflop": 0.231,
+   "tops": 0.45,
+   "device_tops": 1.99,
+   "layers": [
+    {
+     "name": "Convolution_60",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 116.0
+    }
+   ]
+  },
+  {
+   "label": "conv + mish",
+   "compile_ms": 298.8,
+   "latency_ms": 0.704,
+   "p90_ms": 0.72,
+   "inferences": 2870,
+   "per_second": 1436.5,
+   "engines_us": {
+    "Shave": 261.0,
+    "DPU": 102.0
+   },
+   "engines_share": {
+    "Shave": 0.719,
+    "DPU": 0.281
+   },
+   "device_ms": 0.363,
+   "gflop": 0.231,
+   "tops": 0.33,
+   "device_tops": 0.64,
+   "layers": [
+    {
+     "name": "Convolution_66",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 102.0
+    },
+    {
+     "name": "Mish_67",
+     "type": "Mish",
+     "engine": "Shave",
+     "us": 136.0
+    },
+    {
+     "name": "Result_68",
+     "type": "Result",
+     "engine": "Shave",
+     "us": 125.0
+    }
+   ]
+  },
+  {
+   "label": "conv + elu",
+   "compile_ms": 254.9,
+   "latency_ms": 0.73,
+   "p90_ms": 0.765,
+   "inferences": 2741,
+   "per_second": 1371.8,
+   "engines_us": {
+    "Shave": 278.0,
+    "DPU": 112.0
+   },
+   "engines_share": {
+    "Shave": 0.713,
+    "DPU": 0.287
+   },
+   "device_ms": 0.39,
+   "gflop": 0.231,
+   "tops": 0.32,
+   "device_tops": 0.59,
+   "layers": [
+    {
+     "name": "Convolution_72",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 112.0
+    },
+    {
+     "name": "Elu_73",
+     "type": "Elu",
+     "engine": "Shave",
+     "us": 148.0
+    },
+    {
+     "name": "Result_74",
+     "type": "Result",
+     "engine": "Shave",
+     "us": 130.0
+    }
+   ]
+  },
+  {
+   "label": "conv + exp",
+   "compile_ms": 210.0,
+   "latency_ms": 0.538,
+   "p90_ms": 0.563,
+   "inferences": 3689,
+   "per_second": 1847.3,
+   "engines_us": {
+    "DPU": 136.0
+   },
+   "engines_share": {
+    "DPU": 1.0
+   },
+   "device_ms": 0.136,
+   "gflop": 0.231,
+   "tops": 0.43,
+   "device_tops": 1.7,
+   "layers": [
+    {
+     "name": "Convolution_78",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 136.0
+    }
+   ]
+  }
+ ]
+}

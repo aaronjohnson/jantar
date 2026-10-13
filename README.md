@@ -29,6 +29,14 @@ It follows Solarized light or dark, and shows whatever sensors a machine has.
 
 <img src="docs/screenshots/light.png" alt="jantar, Solarized light" width="640">
 
+## NPU examples
+
+[examples/npu](examples/npu) is a small library of single-question NPU
+workloads (matrix work, fusion, vector maths, attention, data movement,
+precision), each with a written prediction and what was measured: which
+engine ran each layer and for how long. Run one while watching `n`:
+`nix run .#npu-example -- 02-fusion --seconds 10`.
+
 ## Running it on NixOS
 
 The flake has a package and a NixOS module. The service owns one virtual

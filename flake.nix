@@ -14,6 +14,8 @@
       packages.${system} = rec {
         jantar = pkgs.callPackage ./nix/package.nix { beamPackages = beam; };
         default = jantar;
+        # The NPU example library (examples/npu): `nix run .#npu-example -- list`.
+        npu-example = pkgs.callPackage ./nix/npu-example.nix { };
       };
 
       nixosModules.default = import ./nix/module.nix self;

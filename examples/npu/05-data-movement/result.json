@@ -1,0 +1,220 @@
+{
+ "example": "05-data-movement",
+ "title": "Data movement: when the NPU waits on memory",
+ "openvino": "2026.4.0-000--",
+ "seconds_per_variant": 2.0,
+ "results": [
+  {
+   "label": "add, 64K numbers",
+   "compile_ms": 120.8,
+   "latency_ms": 0.385,
+   "p90_ms": 0.503,
+   "inferences": 4805,
+   "per_second": 2405.5,
+   "engines_us": {
+    "DPU": 115.0,
+    "Shave": 19.0,
+    "DMA": 18.0
+   },
+   "engines_share": {
+    "DPU": 0.757,
+    "Shave": 0.125,
+    "DMA": 0.118
+   },
+   "device_ms": 0.152,
+   "gflop": 0.0,
+   "tops": 0.0,
+   "device_tops": 0.0,
+   "layers": [
+    {
+     "name": "Parameter_2",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 9.0
+    },
+    {
+     "name": "Parameter_1",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 9.0
+    },
+    {
+     "name": "Add_3",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 115.0
+    },
+    {
+     "name": "Result_4",
+     "type": "Result",
+     "engine": "Shave",
+     "us": 19.0
+    }
+   ]
+  },
+  {
+   "label": "add, 1024K numbers",
+   "compile_ms": 283.9,
+   "latency_ms": 1.833,
+   "p90_ms": 2.391,
+   "inferences": 1033,
+   "per_second": 516.4,
+   "engines_us": {
+    "Shave": 216.0,
+    "DMA": 171.0,
+    "DPU": 97.0
+   },
+   "engines_share": {
+    "Shave": 0.446,
+    "DMA": 0.353,
+    "DPU": 0.2
+   },
+   "device_ms": 0.484,
+   "gflop": 0.001,
+   "tops": 0.0,
+   "device_tops": 0.0,
+   "layers": [
+    {
+     "name": "Parameter_5",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 84.0
+    },
+    {
+     "name": "Parameter_6",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 87.0
+    },
+    {
+     "name": "Add_7",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 97.0
+    },
+    {
+     "name": "Result_8",
+     "type": "Result",
+     "engine": "Shave",
+     "us": 216.0
+    }
+   ]
+  },
+  {
+   "label": "add, 8192K numbers",
+   "compile_ms": 348.9,
+   "latency_ms": 9.481,
+   "p90_ms": 13.125,
+   "inferences": 183,
+   "per_second": 91.3,
+   "engines_us": {
+    "DMA": 1166.0,
+    "Shave": 1028.0,
+    "DPU": 710.0
+   },
+   "engines_share": {
+    "DMA": 0.402,
+    "Shave": 0.354,
+    "DPU": 0.244
+   },
+   "device_ms": 2.904,
+   "gflop": 0.008,
+   "tops": 0.0,
+   "device_tops": 0.0,
+   "layers": [
+    {
+     "name": "Parameter_9",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 563.0
+    },
+    {
+     "name": "Parameter_10",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 603.0
+    },
+    {
+     "name": "Add_11",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 710.0
+    },
+    {
+     "name": "Result_12",
+     "type": "Result",
+     "engine": "Shave",
+     "us": 1028.0
+    }
+   ]
+  },
+  {
+   "label": "depthwise 3x3, 128 ch, 112x112",
+   "compile_ms": 160.5,
+   "latency_ms": 1.782,
+   "p90_ms": 2.031,
+   "inferences": 1133,
+   "per_second": 566.3,
+   "engines_us": {
+    "DPU": 389.0,
+    "DMA": 106.0
+   },
+   "engines_share": {
+    "DPU": 0.786,
+    "DMA": 0.214
+   },
+   "device_ms": 0.495,
+   "gflop": 0.029,
+   "tops": 0.02,
+   "device_tops": 0.06,
+   "layers": [
+    {
+     "name": "Parameter_13",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 106.0
+    },
+    {
+     "name": "GroupConvolution_16",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 389.0
+    }
+   ]
+  },
+  {
+   "label": "full 3x3, 128 ch, 112x112",
+   "compile_ms": 236.2,
+   "latency_ms": 3.278,
+   "p90_ms": 3.517,
+   "inferences": 612,
+   "per_second": 305.8,
+   "engines_us": {
+    "DPU": 1142.0,
+    "DMA": 106.0
+   },
+   "engines_share": {
+    "DPU": 0.915,
+    "DMA": 0.085
+   },
+   "device_ms": 1.248,
+   "gflop": 3.699,
+   "tops": 1.13,
+   "device_tops": 2.96,
+   "layers": [
+    {
+     "name": "Parameter_18",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 106.0
+    },
+    {
+     "name": "Convolution_21",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 1142.0
+    }
+   ]
+  }
+ ]
+}
