@@ -97,8 +97,17 @@ defmodule Jantar.Frame do
     sensors =
       for name <- @sensors, into: %{} do
         case History.sensor(name) do
-          %{status: :ok, current: c} -> {name, c}
-          _ -> {name, nil}
+          %{status: :ok, current: c} ->
+            {name, c}
+
+          # A read error from the NPU's counters is usually brief (the
+          # sensor reopens them at once): keep the DMA dial, saying so,
+          # rather than have it vanish and come back.
+          %{status: {:unavailable, {:npu_port, why}}} when name == :npu_counters ->
+            {name, %{streaming: false, retrying: why}}
+
+          _ ->
+            {name, nil}
         end
       end
 
@@ -890,6 +899,7 @@ defmodule Jantar.Frame do
       info: [
         {cond do
            n.streaming and n.nce_mhz -> "NCE #{n.nce_mhz}  DPU #{n.dpu_mhz} MHz"
+           n[:retrying] -> "counters lost, retrying"
            n[:in_use_elsewhere] -> "counters in use elsewhere"
            true -> "counted while working"
          end, :fg},

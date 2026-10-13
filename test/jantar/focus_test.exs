@@ -7,6 +7,7 @@ defmodule Jantar.FocusTest do
 
   alias Jantar.Display.Ticker
   alias Jantar.Frame
+  alias Jantar.History
 
   @overview %{scale: :live, focus: nil, window: 300_000}
 
@@ -137,5 +138,35 @@ defmodule Jantar.FocusTest do
       )
 
     assert bin =~ "no examples"
+  end
+
+  test "a brief counter read error keeps the DMA dial, saying so" do
+    History.put_sensor(
+      :npu_counters,
+      {:unavailable, {:npu_port, "zetMetricStreamerReadData NOC failed"}},
+      nil,
+      0
+    )
+
+    assert Frame.snapshot().sensors.npu_counters == %{
+             streaming: false,
+             retrying: "zetMetricStreamerReadData NOC failed"
+           }
+
+    History.put_sensor(:npu_counters, {:unavailable, :disabled}, nil, 0)
+    assert Frame.snapshot().sensors.npu_counters == nil
+
+    snap = Frame.Demo.snapshot()
+    sensors = %{snap.sensors | npu_counters: %{streaming: false, retrying: "x"}}
+
+    {bin, _} =
+      Frame.build(%{snap | sensors: sensors},
+        width: 1440,
+        height: 960,
+        focus: "NPU",
+        theme: :dark
+      )
+
+    assert bin =~ "counters lost, retrying"
   end
 end
