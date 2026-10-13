@@ -4,6 +4,7 @@ import openvino.opset13 as op
 from common import conv_flops, model, rng
 
 TITLE = "Precision: FP16 against INT8"
+REAL_WORLD = "what ships: INT8 video-effect models, INT4/INT8 language-model weights"
 QUESTION = """The NPU runs float models in FP16. Quantized models (INT8
 weights and activations) halve the bytes to move and use the DPU's
 integer arrays. How much faster is the same work in INT8?"""

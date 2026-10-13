@@ -16,7 +16,7 @@ defmodule Jantar.NpuExamplesTest do
   @script ~S"""
   #!/bin/sh
   case "$1" in
-    list) echo '[{"name": "fast", "title": "Fast"}, {"name": "medium", "title": "Medium"}, {"name": "slow", "title": "Slow"}, {"name": "broken", "title": "Broken"}]' ;;
+    list) echo '[{"name": "fast", "title": "Fast", "real_world": "everywhere"}, {"name": "medium", "title": "Medium"}, {"name": "slow", "title": "Slow"}, {"name": "broken", "title": "Broken"}]' ;;
     fast)
       echo '{"event": "start", "example": "fast", "variants": ["a", "b"]}'
       echo 'a warning from some library'
@@ -68,6 +68,7 @@ defmodule Jantar.NpuExamplesTest do
 
   test "reads the catalogue, then runs an example to its results", %{name: name, dir: dir} do
     assert Enum.map(current().catalogue, & &1.name) == ["fast", "medium", "slow", "broken"]
+    assert Enum.map(current().catalogue, & &1.real_world) == ["everywhere", "", "", ""]
 
     NpuExamples.run("fast", name)
     c = wait(&(&1.state == :idle and Map.has_key?(&1.results, "fast")))

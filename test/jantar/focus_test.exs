@@ -187,4 +187,21 @@ defmodule Jantar.FocusTest do
                :nomatch
     end
   end
+
+  test "the examples list scrolls to the pick and says where it's used" do
+    snap = Frame.Demo.snapshot()
+
+    build = fn pick ->
+      Frame.build(snap, width: 1440, height: 960, focus: "NPU", theme: :dark, pick: pick)
+      |> elem(0)
+    end
+
+    top = build.(0)
+    assert top =~ "Matrix work" and top =~ "used in"
+    refute top =~ "Search embeddings"
+
+    bottom = build.(10)
+    assert bottom =~ "Search embeddings" and bottom =~ "semantic search"
+    refute bottom =~ "Matrix work"
+  end
 end

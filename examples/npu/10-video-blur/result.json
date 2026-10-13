@@ -1,0 +1,1315 @@
+{
+ "example": "10-video-blur",
+ "title": "Video-call blur: segmenting a person, every frame",
+ "openvino": "2026.4.0-000--",
+ "seconds_per_trial": 1.0,
+ "trials": 3,
+ "turbo": true,
+ "results": [
+  {
+   "label": "MobileNetV2 seg, landscape 256x144",
+   "trials": 3,
+   "latency_ms": 0.229,
+   "latency_range_ms": [
+    0.2,
+    0.233
+   ],
+   "latency_spread": 0.146,
+   "device_ms": 0.94,
+   "device_range_ms": [
+    0.937,
+    0.941
+   ],
+   "device_spread": 0.004,
+   "stable": true,
+   "per_second": 4210.0,
+   "compile_ms": 9.0,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 935.0,
+    "DMA": 5.0
+   },
+   "engines_share": {
+    "DPU": 0.995,
+    "DMA": 0.005
+   },
+   "gflop": 0.42,
+   "tops": 1.83,
+   "device_tops": 0.45,
+   "by_trial": [
+    {
+     "device_ms": 0.94,
+     "latency_ms": 0.2,
+     "npu_mhz": 2050.0,
+     "compile_ms": 8.1
+    },
+    {
+     "device_ms": 0.937,
+     "latency_ms": 0.233,
+     "npu_mhz": 2050.0,
+     "compile_ms": 9.9
+    },
+    {
+     "device_ms": 0.941,
+     "latency_ms": 0.229,
+     "npu_mhz": 2050.0,
+     "compile_ms": 9.0
+    }
+   ],
+   "layers": [
+    {
+     "name": "Parameter_1",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 5.0
+    },
+    {
+     "name": "GroupConvolution_11",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 17.0
+    },
+    {
+     "name": "Convolution_18",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 17.0
+    },
+    {
+     "name": "Convolution_24",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 22.0
+    },
+    {
+     "name": "Convolution_38",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 49.0
+    },
+    {
+     "name": "Convolution_4",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "GroupConvolution_31",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 24.0
+    },
+    {
+     "name": "Convolution_44",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 44.0
+    },
+    {
+     "name": "GroupConvolution_51",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 6.0
+    },
+    {
+     "name": "Convolution_58",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 5.0
+    },
+    {
+     "name": "Convolution_65",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "GroupConvolution_72",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 11.0
+    },
+    {
+     "name": "Convolution_79",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 11.0
+    },
+    {
+     "name": "Convolution_85",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 12.0
+    },
+    {
+     "name": "GroupConvolution_92",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 14.0
+    },
+    {
+     "name": "Convolution_99",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 14.0
+    },
+    {
+     "name": "Convolution_106",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 15.0
+    },
+    {
+     "name": "GroupConvolution_113",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 17.0
+    },
+    {
+     "name": "Convolution_120",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 17.0
+    },
+    {
+     "name": "Convolution_127",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 18.0
+    },
+    {
+     "name": "GroupConvolution_134",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 19.0
+    },
+    {
+     "name": "Add_62",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_141",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 18.0
+    },
+    {
+     "name": "Convolution_147",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 18.0
+    },
+    {
+     "name": "GroupConvolution_154",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 20.0
+    },
+    {
+     "name": "Convolution_161",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 19.0
+    },
+    {
+     "name": "GroupConvolution_175",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 22.0
+    },
+    {
+     "name": "Convolution_168",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 20.0
+    },
+    {
+     "name": "Convolution_182",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 20.0
+    },
+    {
+     "name": "GroupConvolution_196",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 23.0
+    },
+    {
+     "name": "Convolution_189",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 21.0
+    },
+    {
+     "name": "Convolution_203",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 21.0
+    },
+    {
+     "name": "Convolution_210",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 21.0
+    },
+    {
+     "name": "Add_103",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "GroupConvolution_217",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 19.0
+    },
+    {
+     "name": "GroupConvolution_237",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 25.0
+    },
+    {
+     "name": "Convolution_224",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 19.0
+    },
+    {
+     "name": "Convolution_230",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 18.0
+    },
+    {
+     "name": "Add_124",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_244",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 21.0
+    },
+    {
+     "name": "Convolution_251",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 22.0
+    },
+    {
+     "name": "GroupConvolution_258",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 24.0
+    },
+    {
+     "name": "Add_165",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_272",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 23.0
+    },
+    {
+     "name": "Convolution_265",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 21.0
+    },
+    {
+     "name": "GroupConvolution_279",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 22.0
+    },
+    {
+     "name": "Add_186",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_286",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 22.0
+    },
+    {
+     "name": "Convolution_292",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 20.0
+    },
+    {
+     "name": "Add_207",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "GroupConvolution_299",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 19.0
+    },
+    {
+     "name": "Convolution_306",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 19.0
+    },
+    {
+     "name": "Add_248",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_313",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 14.0
+    },
+    {
+     "name": "GroupConvolution_320",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 12.0
+    },
+    {
+     "name": "Convolution_327",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 12.0
+    },
+    {
+     "name": "Add_269",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_334",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "GroupConvolution_341",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 8.0
+    },
+    {
+     "name": "Add_310",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_348",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "Add_331",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_354",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 4.0
+    }
+   ]
+  },
+  {
+   "label": "MobileNetV2 seg, square 256x256",
+   "trials": 3,
+   "latency_ms": 0.303,
+   "latency_range_ms": [
+    0.303,
+    0.305
+   ],
+   "latency_spread": 0.006,
+   "device_ms": 1.572,
+   "device_range_ms": [
+    1.572,
+    1.575
+   ],
+   "device_spread": 0.002,
+   "stable": true,
+   "per_second": 3203.6,
+   "compile_ms": 9.5,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 1564.0,
+    "DMA": 8.0
+   },
+   "engines_share": {
+    "DPU": 0.995,
+    "DMA": 0.005
+   },
+   "gflop": 0.73,
+   "tops": 2.41,
+   "device_tops": 0.46,
+   "by_trial": [
+    {
+     "device_ms": 1.575,
+     "latency_ms": 0.303,
+     "npu_mhz": 2050.0,
+     "compile_ms": 6.3
+    },
+    {
+     "device_ms": 1.572,
+     "latency_ms": 0.303,
+     "npu_mhz": 2050.0,
+     "compile_ms": 9.6
+    },
+    {
+     "device_ms": 1.572,
+     "latency_ms": 0.305,
+     "npu_mhz": 2050.0,
+     "compile_ms": 9.5
+    }
+   ],
+   "layers": [
+    {
+     "name": "Parameter_360",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 8.0
+    },
+    {
+     "name": "Convolution_363",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 16.0
+    },
+    {
+     "name": "GroupConvolution_370",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 23.0
+    },
+    {
+     "name": "Convolution_377",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 34.0
+    },
+    {
+     "name": "Convolution_383",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "GroupConvolution_390",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 20.0
+    },
+    {
+     "name": "Convolution_397",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 21.0
+    },
+    {
+     "name": "Convolution_403",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 25.0
+    },
+    {
+     "name": "Convolution_417",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 36.0
+    },
+    {
+     "name": "GroupConvolution_410",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 34.0
+    },
+    {
+     "name": "Convolution_424",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 41.0
+    },
+    {
+     "name": "GroupConvolution_431",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 46.0
+    },
+    {
+     "name": "Convolution_438",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 46.0
+    },
+    {
+     "name": "GroupConvolution_451",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 52.0
+    },
+    {
+     "name": "Convolution_444",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 48.0
+    },
+    {
+     "name": "Convolution_465",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 54.0
+    },
+    {
+     "name": "Convolution_458",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 51.0
+    },
+    {
+     "name": "GroupConvolution_472",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 50.0
+    },
+    {
+     "name": "Convolution_479",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 40.0
+    },
+    {
+     "name": "Convolution_486",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 43.0
+    },
+    {
+     "name": "GroupConvolution_493",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 44.0
+    },
+    {
+     "name": "Convolution_506",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 45.0
+    },
+    {
+     "name": "Convolution_500",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 44.0
+    },
+    {
+     "name": "GroupConvolution_513",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 47.0
+    },
+    {
+     "name": "Convolution_520",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 46.0
+    },
+    {
+     "name": "Convolution_527",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 48.0
+    },
+    {
+     "name": "GroupConvolution_534",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 48.0
+    },
+    {
+     "name": "Add_421",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_541",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 38.0
+    },
+    {
+     "name": "GroupConvolution_555",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 42.0
+    },
+    {
+     "name": "Convolution_548",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 38.0
+    },
+    {
+     "name": "Convolution_562",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 40.0
+    },
+    {
+     "name": "Convolution_569",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 32.0
+    },
+    {
+     "name": "GroupConvolution_576",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 33.0
+    },
+    {
+     "name": "Convolution_583",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 34.0
+    },
+    {
+     "name": "Add_462",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Add_483",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_589",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 27.0
+    },
+    {
+     "name": "GroupConvolution_596",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 28.0
+    },
+    {
+     "name": "Convolution_603",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 28.0
+    },
+    {
+     "name": "Convolution_610",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 28.0
+    },
+    {
+     "name": "Add_524",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Add_545",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "GroupConvolution_617",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 22.0
+    },
+    {
+     "name": "Convolution_624",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 22.0
+    },
+    {
+     "name": "Add_566",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_631",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 16.0
+    },
+    {
+     "name": "GroupConvolution_638",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 16.0
+    },
+    {
+     "name": "Convolution_645",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 16.0
+    },
+    {
+     "name": "Convolution_651",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 14.0
+    },
+    {
+     "name": "Add_607",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "GroupConvolution_658",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 12.0
+    },
+    {
+     "name": "Convolution_665",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 12.0
+    },
+    {
+     "name": "Convolution_672",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 10.0
+    },
+    {
+     "name": "Add_628",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "GroupConvolution_679",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "Convolution_686",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "Convolution_693",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 8.0
+    },
+    {
+     "name": "Add_669",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "GroupConvolution_700",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 6.0
+    },
+    {
+     "name": "Convolution_707",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "Add_690",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_713",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 4.0
+    }
+   ]
+  },
+  {
+   "label": "MobileNetV2 seg, high-res 512x512",
+   "trials": 3,
+   "latency_ms": 0.986,
+   "latency_range_ms": [
+    0.985,
+    0.987
+   ],
+   "latency_spread": 0.002,
+   "device_ms": 3.282,
+   "device_range_ms": [
+    3.263,
+    3.289
+   ],
+   "device_spread": 0.008,
+   "stable": true,
+   "per_second": 1005.9,
+   "compile_ms": 10.4,
+   "npu_mhz": [
+    2050,
+    2050,
+    2050
+   ],
+   "engines_us": {
+    "DPU": 3247.0,
+    "DMA": 35.0
+   },
+   "engines_share": {
+    "DPU": 0.989,
+    "DMA": 0.011
+   },
+   "gflop": 2.92,
+   "tops": 2.96,
+   "device_tops": 0.89,
+   "by_trial": [
+    {
+     "device_ms": 3.289,
+     "latency_ms": 0.987,
+     "npu_mhz": 2050,
+     "compile_ms": 11.0
+    },
+    {
+     "device_ms": 3.282,
+     "latency_ms": 0.985,
+     "npu_mhz": 2050,
+     "compile_ms": 10.4
+    },
+    {
+     "device_ms": 3.263,
+     "latency_ms": 0.986,
+     "npu_mhz": 2050,
+     "compile_ms": 10.3
+    }
+   ],
+   "layers": [
+    {
+     "name": "Parameter_719",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 35.0
+    },
+    {
+     "name": "Convolution_722",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 260.0
+    },
+    {
+     "name": "GroupConvolution_729",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 207.0
+    },
+    {
+     "name": "Convolution_736",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 207.0
+    },
+    {
+     "name": "Convolution_742",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 212.0
+    },
+    {
+     "name": "GroupConvolution_749",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 219.0
+    },
+    {
+     "name": "Convolution_756",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 221.0
+    },
+    {
+     "name": "Convolution_762",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 146.0
+    },
+    {
+     "name": "GroupConvolution_769",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 129.0
+    },
+    {
+     "name": "Add_780",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 132.0
+    },
+    {
+     "name": "Convolution_776",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 131.0
+    },
+    {
+     "name": "Convolution_783",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 132.0
+    },
+    {
+     "name": "GroupConvolution_790",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 136.0
+    },
+    {
+     "name": "Convolution_797",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 137.0
+    },
+    {
+     "name": "Convolution_803",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 31.0
+    },
+    {
+     "name": "Convolution_817",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 20.0
+    },
+    {
+     "name": "GroupConvolution_810",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 18.0
+    },
+    {
+     "name": "Convolution_824",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 25.0
+    },
+    {
+     "name": "GroupConvolution_831",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 38.0
+    },
+    {
+     "name": "Convolution_845",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 46.0
+    },
+    {
+     "name": "Convolution_838",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 40.0
+    },
+    {
+     "name": "GroupConvolution_852",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 35.0
+    },
+    {
+     "name": "Convolution_859",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 36.0
+    },
+    {
+     "name": "GroupConvolution_872",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 46.0
+    },
+    {
+     "name": "Convolution_879",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 48.0
+    },
+    {
+     "name": "Add_821",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_865",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 35.0
+    },
+    {
+     "name": "Convolution_886",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 48.0
+    },
+    {
+     "name": "GroupConvolution_893",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 37.0
+    },
+    {
+     "name": "Add_842",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Add_883",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_907",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 15.0
+    },
+    {
+     "name": "Convolution_900",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "GroupConvolution_914",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 20.0
+    },
+    {
+     "name": "Convolution_921",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 22.0
+    },
+    {
+     "name": "Add_904",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Add_925",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "Convolution_928",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 5.0
+    },
+    {
+     "name": "GroupConvolution_935",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 12.0
+    },
+    {
+     "name": "Convolution_942",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 16.0
+    },
+    {
+     "name": "Convolution_948",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 21.0
+    },
+    {
+     "name": "Convolution_962",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 19.0
+    },
+    {
+     "name": "Convolution_990",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 48.0
+    },
+    {
+     "name": "GroupConvolution_955",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 12.0
+    },
+    {
+     "name": "Convolution_969",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 24.0
+    },
+    {
+     "name": "Add_966",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "GroupConvolution_976",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 16.0
+    },
+    {
+     "name": "Convolution_1004",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 40.0
+    },
+    {
+     "name": "Convolution_983",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 17.0
+    },
+    {
+     "name": "GroupConvolution_997",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 28.0
+    },
+    {
+     "name": "Convolution_1010",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 25.0
+    },
+    {
+     "name": "Add_987",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 0.0
+    },
+    {
+     "name": "GroupConvolution_1017",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 24.0
+    },
+    {
+     "name": "Convolution_1024",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "Add_1028",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 8.0
+    },
+    {
+     "name": "Convolution_1031",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "GroupConvolution_1038",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "Convolution_1045",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 14.0
+    },
+    {
+     "name": "Add_1049",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 11.0
+    },
+    {
+     "name": "Convolution_1052",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 9.0
+    },
+    {
+     "name": "GroupConvolution_1059",
+     "type": "GroupConvolution",
+     "engine": "DPU",
+     "us": 11.0
+    },
+    {
+     "name": "Convolution_1066",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 14.0
+    },
+    {
+     "name": "Convolution_1072",
+     "type": "Convolution",
+     "engine": "DPU",
+     "us": 8.0
+    }
+   ]
+  }
+ ]
+}

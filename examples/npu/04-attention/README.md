@@ -1,5 +1,10 @@
 # 04 · Attention: a transformer block, as the sequence grows
 
+**Where it shows up.** Language models (the sequence is the prompt, or the
+context so far), Whisper transcription (1,500 audio tokens) and vision
+transformers (image patches). See 11, 12 and 14 for attention inside whole
+models.
+
 **Question.** Attention is matmuls with a softmax in the middle; the scores
 and their softmax grow with the square of the sequence. Does time shift
 from the DPU toward SHAVE as sequences get longer?

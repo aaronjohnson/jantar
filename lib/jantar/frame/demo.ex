@@ -103,12 +103,64 @@ defmodule Jantar.Frame.Demo do
         queue: ["04-attention", "06-precision"],
         error: nil,
         catalogue: [
-          %{name: "01-matrix", title: "Matrix work: how fast is the DPU, and does size help?"},
-          %{name: "02-fusion", title: "Fusion: which activations ride along with the DPU?"},
-          %{name: "03-vector", title: "Vector work: softmax, normalisation and friends"},
-          %{name: "04-attention", title: "Attention: a transformer block, as the sequence grows"},
-          %{name: "05-data-movement", title: "Data movement: when the NPU waits on memory"},
-          %{name: "06-precision", title: "Precision: FP16 against INT8"}
+          %{
+            name: "01-matrix",
+            title: "Matrix work: how fast is the DPU, and does size help?",
+            real_world: "vision backbones, video-call blur, a language model reading its prompt"
+          },
+          %{
+            name: "02-fusion",
+            title: "Fusion: which activations ride along with the DPU?",
+            real_world:
+              "every network: ReLU in ResNet, GELU in BERT and Whisper, SiLU in Llama and YOLO"
+          },
+          %{
+            name: "03-vector",
+            title: "Vector work: softmax, normalisation and friends",
+            real_world: "softmax in every transformer, layer norm in language models and Whisper"
+          },
+          %{
+            name: "04-attention",
+            title: "Attention: a transformer block, as the sequence grows",
+            real_world:
+              "language models, Whisper, vision transformers: sequence = prompt or context"
+          },
+          %{
+            name: "05-data-movement",
+            title: "Data movement: when the NPU waits on memory",
+            real_world:
+              "a language model writing each token; MobileNet's depthwise layers; upscaling"
+          },
+          %{
+            name: "06-precision",
+            title: "Precision: FP16 against INT8",
+            real_world: "what ships: INT8 video-effect models, INT4/INT8 language-model weights"
+          },
+          %{
+            name: "10-video-blur",
+            title: "Video-call blur: segmenting a person, every frame",
+            real_world: "video calls: background blur and replacement, auto-framing"
+          },
+          %{
+            name: "11-speech-to-text",
+            title: "Speech to text: Whisper's encoder on 30 s of audio",
+            real_world: "live captions, meeting transcripts, voice typing"
+          },
+          %{
+            name: "12-language-model",
+            title: "Language model: reading the prompt vs writing each token",
+            real_world: "on-device assistants, summarising, rewriting text"
+          },
+          %{
+            name: "13-object-detection",
+            title: "Object detection: a YOLO-style network, SiLU vs mish",
+            real_world: "cameras, photo search, robots, counting things in video"
+          },
+          %{
+            name: "14-search-embeddings",
+            title: "Search embeddings: a small BERT, one sentence vs batches",
+            real_world: "semantic search in files and mail, recall, recommendations"
+          }
         ],
         results: %{
           "01-matrix" => %{
@@ -128,6 +180,12 @@ defmodule Jantar.Frame.Demo do
             at: 0,
             variants: [],
             engines: %{"Shave" => 0.638, "DMA" => 0.146, "DPU" => 0.216}
+          },
+          "12-language-model" => %{
+            ok: true,
+            at: 0,
+            variants: [],
+            engines: %{"DPU" => 0.52, "Shave" => 0.40, "DMA" => 0.08}
           },
           "05-data-movement" => %{
             ok: false,

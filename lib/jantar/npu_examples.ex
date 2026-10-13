@@ -5,7 +5,7 @@ defmodule Jantar.NpuExamples do
   one runs wait in a queue), and publishes what it is doing as the
   `:npu_examples` sensor:
 
-      %{state: :idle | :listing | :running, catalogue: [%{name, title}],
+      %{state: :idle | :listing | :running, catalogue: [%{name, title, real_world}],
         example: name, label: variant, index: n, count: n, queue: [name],
         results: %{name => %{ok: bool, at: unix s, engines: %{"DPU" => share},
                              variants: [%{label, latency_ms, device_ms, ...}]}},
@@ -208,7 +208,11 @@ defmodule Jantar.NpuExamples do
   defp line(:listing, line, data) do
     case JSON.decode(line) do
       {:ok, list} when is_list(list) ->
-        %{data | catalogue: for(%{"name" => n, "title" => t} <- list, do: %{name: n, title: t})}
+        cat =
+          for %{"name" => n, "title" => t} = e <- list,
+              do: %{name: n, title: t, real_world: e["real_world"] || ""}
+
+        %{data | catalogue: cat}
 
       _ ->
         data

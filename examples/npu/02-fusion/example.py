@@ -4,6 +4,7 @@ import openvino.opset13 as op
 from common import conv, conv_flops, model
 
 TITLE = "Fusion: which activations ride along with the DPU?"
+REAL_WORLD = "every network: ReLU in ResNet, GELU in BERT and Whisper, SiLU in Llama and YOLO"
 QUESTION = """After a convolution, the DPU can apply some functions to its
 output on the way out (post-processing), for free. Which activations does
 it fuse like that, and which become a separate layer on the SHAVE cores?"""

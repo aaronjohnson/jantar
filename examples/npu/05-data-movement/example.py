@@ -4,6 +4,7 @@ import openvino.opset13 as op
 from common import conv, conv_flops, model, weights
 
 TITLE = "Data movement: when the NPU waits on memory"
+REAL_WORLD = "a language model writing each token; MobileNet's depthwise layers; upscaling"
 QUESTION = """Every tensor has to come from system RAM into the tiles' CMX
 and back, through DMA. An elementwise add does one operation per number
 moved; a wide convolution does hundreds. When does the data, rather than

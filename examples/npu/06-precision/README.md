@@ -1,5 +1,9 @@
 # 06 · Precision: FP16 against INT8
 
+**Where it shows up.** What actually ships on NPUs: video-effect models
+run in INT8, and NPU language models usually store weights as INT4 or
+INT8. 12 tries INT8 weights on a language-model layer, with a surprise.
+
 **Question.** The NPU runs float models in FP16. INT8 halves the bytes and
 uses integer arrays. How much faster is the same work in INT8?
 

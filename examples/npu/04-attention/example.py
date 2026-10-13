@@ -4,6 +4,7 @@ import openvino.opset13 as op
 from common import model, weights
 
 TITLE = "Attention: a transformer block, as the sequence grows"
+REAL_WORLD = "language models, Whisper, vision transformers: sequence = prompt or context"
 QUESTION = """Attention is matmuls (projections, Q times K, the weights times
 V) with a softmax in the middle. As the sequence grows, Q times K and the
 softmax grow with its square. Does the NPU's time shift from the DPU

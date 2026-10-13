@@ -4,6 +4,7 @@ import numpy as np
 from common import conv, conv_flops, model, weights
 
 TITLE = "Matrix work: how fast is the DPU, and does size help?"
+REAL_WORLD = "vision backbones, video-call blur, a language model reading its prompt"
 QUESTION = """Convolutions and matmuls are what the DPU's multiply-accumulate
 arrays are for. How many TOPS do we actually get, and does a bigger layer
 use the hardware better than a small one?"""

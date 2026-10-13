@@ -1,5 +1,10 @@
 # 01 · Matrix work: how fast is the DPU, and does size help?
 
+**Where it shows up.** Vision backbones (photo tagging, YOLO-style
+detection, the segmentation behind video-call blur) are stacks of
+convolutions, and a language model reading a prompt is mostly big matrix
+multiplies: see 10, 12 (prefill) and 13.
+
 **Question.** Convolutions and matmuls are what the DPU's multiply-accumulate
 arrays are for. How many TOPS do we get, and does a bigger layer use the
 hardware better?

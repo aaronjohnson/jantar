@@ -1,0 +1,726 @@
+{
+ "example": "12-language-model",
+ "title": "Language model: reading the prompt vs writing each token",
+ "openvino": "2026.4.0-000--",
+ "seconds_per_trial": 1.0,
+ "trials": 3,
+ "turbo": true,
+ "results": [
+  {
+   "label": "prefill, 512-token prompt",
+   "trials": 3,
+   "latency_ms": 8.703,
+   "latency_range_ms": [
+    8.7,
+    8.704
+   ],
+   "latency_spread": 0.001,
+   "device_ms": 12.975,
+   "device_range_ms": [
+    12.958,
+    12.981
+   ],
+   "device_spread": 0.002,
+   "stable": true,
+   "per_second": 114.0,
+   "compile_ms": 28.9,
+   "npu_mhz": [
+    2050,
+    2050,
+    2050
+   ],
+   "engines_us": {
+    "DPU": 9197.0,
+    "Shave": 3719.0,
+    "DMA": 59.0
+   },
+   "engines_share": {
+    "DPU": 0.709,
+    "Shave": 0.287,
+    "DMA": 0.005
+   },
+   "gflop": 64.425,
+   "tops": 7.4,
+   "device_tops": 4.97,
+   "by_trial": [
+    {
+     "device_ms": 12.975,
+     "latency_ms": 8.7,
+     "npu_mhz": 2050,
+     "compile_ms": 26.9
+    },
+    {
+     "device_ms": 12.981,
+     "latency_ms": 8.703,
+     "npu_mhz": 2050,
+     "compile_ms": 38.4
+    },
+    {
+     "device_ms": 12.958,
+     "latency_ms": 8.704,
+     "npu_mhz": 2050,
+     "compile_ms": 28.9
+    }
+   ],
+   "layers": [
+    {
+     "name": "Parameter_1",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 59.0
+    },
+    {
+     "name": "Multiply_20",
+     "type": "Multiply",
+     "engine": "Shave",
+     "us": 2192.0
+    },
+    {
+     "name": "Multiply_31",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 467.0
+    },
+    {
+     "name": "MatMul_34",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 344.0
+    },
+    {
+     "name": "Multiply_13",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 38.0
+    },
+    {
+     "name": "MatMul_16",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 103.0
+    },
+    {
+     "name": "Transpose_46",
+     "type": "Transpose",
+     "engine": "DPU",
+     "us": 11.0
+    },
+    {
+     "name": "MatMul_19",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 95.0
+    },
+    {
+     "name": "MatMul_79",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 1438.0
+    },
+    {
+     "name": "MatMul_88",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 383.0
+    },
+    {
+     "name": "Add_89",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 99.0
+    },
+    {
+     "name": "Multiply_101",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 195.0
+    },
+    {
+     "name": "Multiply_90",
+     "type": "Multiply",
+     "engine": "Shave",
+     "us": 89.0
+    },
+    {
+     "name": "MatMul_109",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 3651.0
+    },
+    {
+     "name": "MatMul_104",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 1923.0
+    },
+    {
+     "name": "Multiply_110",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 311.0
+    },
+    {
+     "name": "MatMul_113",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 1480.0
+    },
+    {
+     "name": "Add_114",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 97.0
+    }
+   ]
+  },
+  {
+   "label": "decode 1 token, 512 context",
+   "trials": 3,
+   "latency_ms": 1.613,
+   "latency_range_ms": [
+    1.61,
+    1.619
+   ],
+   "latency_spread": 0.005,
+   "device_ms": 2.294,
+   "device_range_ms": [
+    2.294,
+    2.299
+   ],
+   "device_spread": 0.002,
+   "stable": true,
+   "per_second": 609.5,
+   "compile_ms": 26.2,
+   "npu_mhz": [
+    2050.0,
+    2050.0,
+    2050.0
+   ],
+   "engines_us": {
+    "DPU": 1531.0,
+    "Shave": 465.0,
+    "DMA": 298.0
+   },
+   "engines_share": {
+    "DPU": 0.667,
+    "Shave": 0.203,
+    "DMA": 0.13
+   },
+   "gflop": 0.126,
+   "tops": 0.08,
+   "device_tops": 0.05,
+   "by_trial": [
+    {
+     "device_ms": 2.294,
+     "latency_ms": 1.61,
+     "npu_mhz": 2050.0,
+     "compile_ms": 24.9
+    },
+    {
+     "device_ms": 2.294,
+     "latency_ms": 1.613,
+     "npu_mhz": 2050.0,
+     "compile_ms": 26.2
+    },
+    {
+     "device_ms": 2.299,
+     "latency_ms": 1.619,
+     "npu_mhz": 2050.0,
+     "compile_ms": 27.8
+    }
+   ],
+   "layers": [
+    {
+     "name": "Multiply_139",
+     "type": "Multiply",
+     "engine": "Shave",
+     "us": 282.0
+    },
+    {
+     "name": "Multiply_150",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 30.0
+    },
+    {
+     "name": "Multiply_130",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 30.0
+    },
+    {
+     "name": "MatMul_153",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 117.0
+    },
+    {
+     "name": "Parameter_116",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 280.0
+    },
+    {
+     "name": "MatMul_195",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 177.0
+    },
+    {
+     "name": "Parameter_117",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 18.0
+    },
+    {
+     "name": "MatMul_133",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 24.0
+    },
+    {
+     "name": "MatMul_137",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 38.0
+    },
+    {
+     "name": "Concat_134",
+     "type": "Concat",
+     "engine": "DMA",
+     "us": 0.0
+    },
+    {
+     "name": "Transpose_165",
+     "type": "Transpose",
+     "engine": "DPU",
+     "us": 13.0
+    },
+    {
+     "name": "Concat_138",
+     "type": "Concat",
+     "engine": "DPU",
+     "us": 22.0
+    },
+    {
+     "name": "MatMul_204",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 99.0
+    },
+    {
+     "name": "Multiply_217",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 14.0
+    },
+    {
+     "name": "MatMul_225",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 369.0
+    },
+    {
+     "name": "Add_205",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 7.0
+    },
+    {
+     "name": "Multiply_206",
+     "type": "Multiply",
+     "engine": "Shave",
+     "us": 6.0
+    },
+    {
+     "name": "MatMul_220",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 369.0
+    },
+    {
+     "name": "Multiply_226",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 6.0
+    },
+    {
+     "name": "MatMul_229",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 384.0
+    },
+    {
+     "name": "Add_230",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 9.0
+    }
+   ]
+  },
+  {
+   "label": "decode 1 token, 2048 context",
+   "trials": 3,
+   "latency_ms": 2.148,
+   "latency_range_ms": [
+    2.144,
+    2.151
+   ],
+   "latency_spread": 0.003,
+   "device_ms": 2.825,
+   "device_range_ms": [
+    2.807,
+    2.832
+   ],
+   "device_spread": 0.009,
+   "stable": true,
+   "per_second": 459.8,
+   "compile_ms": 26.2,
+   "npu_mhz": [
+    2050.0,
+    2050,
+    2050
+   ],
+   "engines_us": {
+    "DPU": 1757.0,
+    "Shave": 775.0,
+    "DMA": 293.0
+   },
+   "engines_share": {
+    "DPU": 0.622,
+    "Shave": 0.274,
+    "DMA": 0.104
+   },
+   "gflop": 0.138,
+   "tops": 0.06,
+   "device_tops": 0.05,
+   "by_trial": [
+    {
+     "device_ms": 2.832,
+     "latency_ms": 2.151,
+     "npu_mhz": 2050.0,
+     "compile_ms": 26.2
+    },
+    {
+     "device_ms": 2.807,
+     "latency_ms": 2.144,
+     "npu_mhz": 2050,
+     "compile_ms": 35.3
+    },
+    {
+     "device_ms": 2.825,
+     "latency_ms": 2.148,
+     "npu_mhz": 2050,
+     "compile_ms": 25.0
+    }
+   ],
+   "layers": [
+    {
+     "name": "Multiply_255",
+     "type": "Multiply",
+     "engine": "Shave",
+     "us": 451.0
+    },
+    {
+     "name": "Multiply_266",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 60.0
+    },
+    {
+     "name": "Multiply_246",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 60.0
+    },
+    {
+     "name": "MatMul_269",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 147.0
+    },
+    {
+     "name": "Parameter_232",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 244.0
+    },
+    {
+     "name": "Parameter_233",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 49.0
+    },
+    {
+     "name": "MatMul_311",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 320.0
+    },
+    {
+     "name": "MatMul_249",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 44.0
+    },
+    {
+     "name": "Concat_250",
+     "type": "Concat",
+     "engine": "DMA",
+     "us": 0.0
+    },
+    {
+     "name": "Transpose_281",
+     "type": "Transpose",
+     "engine": "DPU",
+     "us": 53.0
+    },
+    {
+     "name": "MatMul_253",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 39.0
+    },
+    {
+     "name": "Concat_254",
+     "type": "Concat",
+     "engine": "DPU",
+     "us": 122.0
+    },
+    {
+     "name": "MatMul_320",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 90.0
+    },
+    {
+     "name": "Multiply_333",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 14.0
+    },
+    {
+     "name": "MatMul_341",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 365.0
+    },
+    {
+     "name": "Add_321",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 2.0
+    },
+    {
+     "name": "Multiply_322",
+     "type": "Multiply",
+     "engine": "Shave",
+     "us": 4.0
+    },
+    {
+     "name": "MatMul_336",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 365.0
+    },
+    {
+     "name": "Multiply_342",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 7.0
+    },
+    {
+     "name": "MatMul_345",
+     "type": "MatMul",
+     "engine": "DPU",
+     "us": 384.0
+    },
+    {
+     "name": "Add_346",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 5.0
+    }
+   ]
+  },
+  {
+   "label": "decode, 2048 ctx, INT8 weights",
+   "trials": 3,
+   "latency_ms": 2.408,
+   "latency_range_ms": [
+    2.399,
+    2.45
+   ],
+   "latency_spread": 0.021,
+   "device_ms": 2.992,
+   "device_range_ms": [
+    2.991,
+    3.0
+   ],
+   "device_spread": 0.003,
+   "stable": true,
+   "per_second": 408.6,
+   "compile_ms": 24.0,
+   "npu_mhz": [
+    2050.0,
+    2050,
+    2050
+   ],
+   "engines_us": {
+    "Shave": 2398.0,
+    "DMA": 330.0,
+    "DPU": 264.0
+   },
+   "engines_share": {
+    "Shave": 0.801,
+    "DMA": 0.11,
+    "DPU": 0.088
+   },
+   "gflop": 0.138,
+   "tops": 0.06,
+   "device_tops": 0.05,
+   "by_trial": [
+    {
+     "device_ms": 3.0,
+     "latency_ms": 2.45,
+     "npu_mhz": 2050.0,
+     "compile_ms": 24.0
+    },
+    {
+     "device_ms": 2.991,
+     "latency_ms": 2.408,
+     "npu_mhz": 2050,
+     "compile_ms": 24.9
+    },
+    {
+     "device_ms": 2.992,
+     "latency_ms": 2.399,
+     "npu_mhz": 2050,
+     "compile_ms": 22.9
+    }
+   ],
+   "layers": [
+    {
+     "name": "Multiply_381",
+     "type": "Multiply",
+     "engine": "Shave",
+     "us": 296.0
+    },
+    {
+     "name": "MatMul_400",
+     "type": "MatMul",
+     "engine": "Shave",
+     "us": 121.0
+    },
+    {
+     "name": "Parameter_348",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 283.0
+    },
+    {
+     "name": "Parameter_349",
+     "type": "Parameter",
+     "engine": "DMA",
+     "us": 47.0
+    },
+    {
+     "name": "MatMul_442",
+     "type": "ScaledDotProductAttention",
+     "engine": "Shave",
+     "us": 330.0
+    },
+    {
+     "name": "Multiply_392",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 15.0
+    },
+    {
+     "name": "Multiply_362",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 13.0
+    },
+    {
+     "name": "MatMul_370",
+     "type": "MatMul",
+     "engine": "Shave",
+     "us": 87.0
+    },
+    {
+     "name": "MatMul_379",
+     "type": "MatMul",
+     "engine": "Shave",
+     "us": 134.0
+    },
+    {
+     "name": "Transpose_412",
+     "type": "Transpose",
+     "engine": "DPU",
+     "us": 55.0
+    },
+    {
+     "name": "Concat_380",
+     "type": "Concat",
+     "engine": "DPU",
+     "us": 124.0
+    },
+    {
+     "name": "MatMul_456",
+     "type": "MatMul",
+     "engine": "Shave",
+     "us": 97.0
+    },
+    {
+     "name": "Add_457",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 2.0
+    },
+    {
+     "name": "Multiply_469",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 5.0
+    },
+    {
+     "name": "Multiply_458",
+     "type": "Multiply",
+     "engine": "Shave",
+     "us": 2.0
+    },
+    {
+     "name": "MatMul_487",
+     "type": "MatMul",
+     "engine": "Shave",
+     "us": 388.0
+    },
+    {
+     "name": "MatMul_477",
+     "type": "MatMul",
+     "engine": "Shave",
+     "us": 382.0
+    },
+    {
+     "name": "MatMul_496",
+     "type": "MatMul",
+     "engine": "Shave",
+     "us": 561.0
+    },
+    {
+     "name": "Multiply_488",
+     "type": "Multiply",
+     "engine": "DPU",
+     "us": 12.0
+    },
+    {
+     "name": "Add_497",
+     "type": "Add",
+     "engine": "DPU",
+     "us": 38.0
+    }
+   ]
+  }
+ ]
+}

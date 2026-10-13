@@ -55,12 +55,16 @@ the CPU through the NPU's control core to its matrix engine (DPU), vector
 cores (SHAVE) and data movers (DMA), each lit by what the hardware is doing
 right now.
 
-Beside it is a library of small experiments ([examples/npu](examples/npu)),
-each asking one question: How fast is the matrix engine, and does size
-help? Which activations come free with a convolution? Where does a
-transformer's attention run? When does moving data, not maths, set the
-pace? How much faster is INT8? Each has a prediction written down first and
-what was measured, including where the prediction was wrong. Pick one with
+Beside it is a library of experiments ([examples/npu](examples/npu)) in two
+shelves. The lab asks one question each: How fast is the matrix engine,
+and does size help? Which activations come free with a convolution? Where
+does a transformer's attention run? When does moving data, not maths, set
+the pace? How much faster is INT8? The applications run real workloads at
+their real sizes: video-call background blur, speech to text, a language
+model reading a prompt and writing an answer, object detection, and
+embeddings for search. Each has a prediction written down first, what was
+measured (including where the prediction was wrong) and where it shows up
+in everyday use, which the screen shows for the example you pick. Pick one with
 `j`/`k` and run it with `r`: the run is marked on the dials as it happens,
 and its split across the engines is shown when it finishes. From a shell:
 `nix run .#npu-example -- 02-fusion`.

@@ -166,16 +166,19 @@ def report(example, results):
     print("predicted: " + " ".join(example.PREDICTION.split()))
     n = results[0]["trials"] if results else 0
     print(f"\n{n} trials per variant, each compiled afresh; medians, with the NPU time's range.")
-    print(f"\n{'variant':30} {'wall ms':>8} {'NPU ms':>7} {'range':>15} {'spread':>7} {'NPU TOPS':>9}   engines (median trial)")
+    print(f"\n{'variant':30} {'wall ms':>8} {'NPU ms':>7} {'range':>15} {'spread':>7} {'TOPS':>6} {'NPU':>6}   engines (median trial)")
     for r in results:
         split = "  ".join(f"{k} {v:.0f}µs" for k, v in r["engines_us"].items())
+        tops = f"{r['tops']:.2f}" if r["tops"] is not None else ""
         dtops = f"{r['device_tops']:.2f}" if r["device_tops"] is not None else ""
         lo, hi = r["device_range_ms"]
         flag = "" if r["stable"] else "  UNSETTLED"
         print(f"{r['label'][:30]:30} {r['latency_ms']:8.3f} {r['device_ms']:7.3f} {lo:7.3f}–{hi:<7.3f} "
-              f"{r['device_spread'] * 100:6.0f}% {dtops:>9}   {split}{flag}")
+              f"{r['device_spread'] * 100:6.0f}% {tops:>6} {dtops:>6}   {split}{flag}")
     print("\nwall = one inference as the program sees it. NPU = the per-layer engine"
-          "\ntimes added up; engines can overlap, so it can exceed wall. spread ="
+          "\ntimes added up: layers overlap across engines and the NPU's tiles, so for"
+          "\nwhole networks it can far exceed wall (trust wall there); for a single"
+          "\nlayer it's the NPU's own time. TOPS over wall, then over NPU. spread ="
           f"\n(max - min) / median of the NPU time, less the extremes from 5 trials;"
           f"\nover {UNSTABLE:.0%} is UNSETTLED.")
     clocks = sorted({m for r in results for m in r["npu_mhz"] if m})

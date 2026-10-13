@@ -1,5 +1,11 @@
 # 05 · Data movement: when the NPU waits on memory
 
+**Where it shows up.** A language model writing its answer reads every
+weight once per token, so it's bound by memory, not maths (12, decode).
+MobileNet and EfficientNet, used for video-call blur (10), are built from
+depthwise convolutions; high-resolution video upscaling moves large
+frames.
+
 **Question.** Every tensor travels RAM → CMX → RAM through DMA. An add does
 one operation per number moved; a convolution hundreds. When does data,
 not arithmetic, set the pace?

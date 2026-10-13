@@ -9,6 +9,7 @@ defmodule Mix.Tasks.Jantar.Png do
       mix jantar.png --theme light --repeat 20        time 20 renders, report the median
       mix jantar.png --demo --focus LINKS --window 1  one section full screen, last minute
 
+  `--pick N` marks the Nth NPU example (from 0) on the NPU screen.
   `--focus` takes a section title (CPU, LINKS, NPU, "MEMORY · STORAGE", ...) and
   `--window` minutes (default 5), as the dashboard's zoom keys do.
 
@@ -28,6 +29,7 @@ defmodule Mix.Tasks.Jantar.Png do
     wait: :integer,
     repeat: :integer,
     focus: :string,
+    pick: :integer,
     window: :integer
   ]
 
@@ -68,7 +70,11 @@ defmodule Mix.Tasks.Jantar.Png do
 
     {build_us, {list, _meta}} =
       :timer.tc(fn ->
-        Frame.build(snapshot, [width: w, height: h, label: label, focus: opts[:focus]] ++ fixed)
+        Frame.build(
+          snapshot,
+          [width: w, height: h, label: label, focus: opts[:focus], pick: opts[:pick] || 0] ++
+            fixed
+        )
       end)
 
     {:ok, server} = Render.start_link(backend)

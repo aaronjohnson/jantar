@@ -45,7 +45,10 @@ def main():
     a = ap.parse_args()
 
     if a.name == "list":
-        cat = [{"name": p.name, "title": load(p).TITLE} for p in examples()]
+        cat = []
+        for p in examples():
+            m = load(p)
+            cat.append({"name": p.name, "title": m.TITLE, "real_world": getattr(m, "REAL_WORLD", "")})
         if a.json:
             print(json.dumps(cat))
         else:

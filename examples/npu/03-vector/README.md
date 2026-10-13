@@ -1,5 +1,9 @@
 # 03 · Vector work: softmax, normalisation and friends
 
+**Where it shows up.** Softmax sits inside every transformer's attention;
+LayerNorm (BERT, Whisper) and RMSNorm (Llama) sit around every layer.
+They're a large part of SHAVE's work in 11, 12 and 14.
+
 **Question.** Transformers and vision models spend real time in operations
 that aren't matrix multiplies. Where do they run, and how fast?
 

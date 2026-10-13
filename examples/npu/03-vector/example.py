@@ -4,6 +4,7 @@ import openvino.opset13 as op
 from common import model
 
 TITLE = "Vector work: softmax, normalisation and friends"
+REAL_WORLD = "softmax in every transformer, layer norm in language models and Whisper"
 QUESTION = """Transformers and many vision models spend real time in
 operations that aren't matrix multiplies: softmax, layer norm, exponentials,
 reductions, reshuffles. Where do these run, and how fast compared with

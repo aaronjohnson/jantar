@@ -528,11 +528,14 @@ defmodule Jantar.Frame do
 
     bar_w = w * 0.28
     bar_x = x + w - bar_w
-    shown = max(0, trunc((h - row) / row))
+    # Rows for the list, less one for the picked example's use; the list
+    # scrolls to keep the pick in view.
+    shown = max(1, trunc((h - row) / row) - 1)
+    first = if picked, do: (picked - div(shown, 2)) |> min(n - shown) |> max(0), else: 0
 
     lines =
-      for {e, i} <- Enum.with_index(cat), i < shown do
-        ly = y + row * (i + 1) + 2 * u
+      for {e, i} <- Enum.with_index(cat), i >= first, i < first + shown do
+        ly = y + row * (i - first + 1) + 2 * u
         on = i == picked
         live = running and ex.example == e.name
 
@@ -544,11 +547,19 @@ defmodule Jantar.Frame do
           end
 
         place = Enum.find_index(ex[:queue] || [], &(&1 == e.name))
+        # More above or below the window.
+        more =
+          cond do
+            i == first and first > 0 -> "▴ "
+            i == first + shown - 1 and first + shown < n -> "▾ "
+            true -> "  "
+          end
 
         [
           DL.text(bar_x - 6 * u, ly, :right, :top, [
             {if(place, do: "queued #{place + 1}", else: ""), small, false, c.cyan}
           ]),
+          DL.text(x - 12 * u, ly, :left, :top, [{more, small, false, c.dim}]),
           DL.text(x, ly, :left, :top, [
             {if(on, do: "▸ ", else: "  "), small, true, col},
             # "Fusion: which activations ...": the part before the question.
@@ -558,7 +569,20 @@ defmodule Jantar.Frame do
         ]
       end
 
-    [header, lines]
+    # Where the picked one shows up in real use.
+    use =
+      case picked && Enum.at(cat, picked) do
+        %{real_world: rw} when rw not in [nil, ""] ->
+          DL.text(x, y + row * (shown + 1) + 4 * u, :left, :top, [
+            {"used in  ", small, true, c.dim},
+            {rw, small, false, c.fg}
+          ])
+
+        _ ->
+          []
+      end
+
+    [header, lines, use]
   end
 
   defp queued_note([_ | _] = q), do: "  +#{length(q)} queued"

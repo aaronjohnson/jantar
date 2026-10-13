@@ -1,5 +1,11 @@
 # 02 · Fusion: which activations ride along with the DPU?
 
+**Where it shows up.** Every modern network has an activation after nearly
+every layer: ReLU in ResNet; GELU in BERT, Whisper and vision
+transformers; SiLU (swish) in Llama's MLP and YOLOv5/v8. Mish was YOLOv4's
+choice, exactly the trap found here: see 13 for the cost in a whole
+detector.
+
 **Question.** After a convolution the DPU can transform its output on the way
 out, for free. Which activations fuse like that, and which become their
 own layer on SHAVE?
