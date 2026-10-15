@@ -76,7 +76,7 @@ in
     themeFile = mkOption {
       type = types.nullOr types.str;
       default = null;
-      experiment = "/run/jantar-theme";
+      example = "/run/jantar-theme";
       description = ''
         Follow a file containing "dark" or "light", read every minute. The
         service can't ask a user's desktop (gsettings) itself; a user service
@@ -99,7 +99,7 @@ in
     usbBays = mkOption {
       type = types.attrsOf types.str;
       default = { };
-      experiment = {
+      example = {
         "3-3" = "port1";
       };
       description = ''
@@ -155,7 +155,7 @@ in
     extraGroups = mkOption {
       type = types.listOf types.str;
       default = [ ];
-      experiment = [ "github-runner" ];
+      example = [ "github-runner" ];
       description = ''
         More groups for the service user, for sources that need them: e.g.
         "github-runner" to read the CI runner's

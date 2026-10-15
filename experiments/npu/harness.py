@@ -305,7 +305,7 @@ def report(experiment, results):
     print("predicted: " + " ".join(experiment.PREDICTION.split()))
     n = results[0]["trials"] if results else 0
     print(f"\n{n} trials per variant, each compiled afresh; medians, with the NPU time's range.")
-    print(f"\n{'variant':30} {'wall ms':>8} {'/s':>7} {'NPU ms':>7} {'range':>15} {'spread':>7} {'TOPS':>6} {'NPU':>6}   engines (median trial)")
+    print(f"\n{'variant':30} {'wall ms':>8} {'/s':>7} {'eng ms':>7} {'range':>15} {'spread':>7} {'TOPS':>6} {'eng':>6}   engines (median trial)")
     for r in results:
         split = "  ".join(f"{k} {v:.0f}µs" for k, v in r["engines_us"].items())
         tops = f"{r['tops']:.2f}" if r["tops"] is not None else ""
@@ -315,11 +315,11 @@ def report(experiment, results):
         print(f"{r['label'][:30]:30} {r['latency_ms']:8.3f} {r['per_second']:7.0f} {r['device_ms']:7.3f} {lo:7.3f}–{hi:<7.3f} "
               f"{r['device_spread'] * 100:6.0f}% {tops:>6} {dtops:>6}   {split}{flag}")
     print("\nwall = one inference as the program sees it; /s = inferences finished a second."
-          "\nNPU = the per-layer engine"
+          "\neng = the per-layer engine"
           "\ntimes added up: layers overlap across engines and the NPU's tiles, so for"
           "\nwhole networks it can far exceed wall (trust wall there); for a single"
-          "\nlayer it's the NPU's own time. TOPS over wall, then over NPU. spread ="
-          f"\n(max - min) / median of the NPU time, less the extremes from 5 trials;"
+          "\nlayer it's the device's own time. TOPS over wall, then over eng. spread ="
+          f"\n(max - min) / median of the engine time, less the extremes from 5 trials;"
           f"\nover {UNSTABLE:.0%} is UNSETTLED.")
     clocks = sorted({m for r in results for m in r["npu_mhz"] if m})
     if clocks:
@@ -339,7 +339,7 @@ def report(experiment, results):
             break
 
 
-def run(experiment, name, seconds, as_json, save=None, trials=3, settings=None, cache=None):
+def run(experiment, name, seconds, as_json, save=None, trials=3, settings=None, cache=None, quiet=False):
     settings = settings or Run()
     core = ov.Core()
     if settings.device not in core.available_devices:
@@ -376,7 +376,7 @@ def run(experiment, name, seconds, as_json, save=None, trials=3, settings=None, 
         for r in results:
             emit({"event": "result", **r})
         emit({"event": "done", "experiment": name})
-    else:
+    elif not quiet:
         report(experiment, results)
     if save:
         with open(save, "w") as f:
